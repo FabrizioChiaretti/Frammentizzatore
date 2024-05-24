@@ -11,7 +11,6 @@ def frammentizzatore(packet):
 
     print("processing traffic...")
     packet1 = packet
-    print(packet.header())
     packet1.accept()
 
     print("frammentizzatore ends")
