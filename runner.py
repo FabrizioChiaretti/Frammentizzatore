@@ -9,9 +9,8 @@ def traffic_handler(packet):
 
     print("traffic intercepted")
     print("processing traffic...")
-    number_of_fragments = 3
     framm = frammentizzatore()
-    pkt = framm.fragment(packet, number_of_fragments)
+    pkt = framm.fragment(packet)
     
     packet.set_payload(bytes(pkt))
     packet.accept()

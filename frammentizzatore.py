@@ -7,7 +7,7 @@ class frammentizzatore:
         self.max_fragment_leght = max_fragment_lenght
     
     
-    def fragment(self, input_packet, num_of_fragments):
+    def fragment(self, input_packet, num_of_fragments = 1):
         
         packet = IPv6(input_packet.get_payload())
         
@@ -30,10 +30,10 @@ class frammentizzatore:
             i +=1
             continue
         
-        first_fragment[i].nh = 44
-        random_value = getrandbits(32)
-        first_fragment = first_fragment / IPv6ExtHdrFragment(nh = packet[i].nh, m=1, id = random_value)
-        #first_fragment.show()
+        first_fragment[i].nh = 44 # netx header = fragment header
+        packet_id = getrandbits(32)
+        
+        first_fragment = first_fragment / IPv6ExtHdrFragment(nh = packet[i].nh, m=1, id = packet_id)
         
         input_payload = packet[i].payload.copy() # fragmentable part
         #input_payload.show()
@@ -42,7 +42,13 @@ class frammentizzatore:
         first_fragment.plen = len(raw(first_fragment.payload))
         #first_fragment.show()
         
+        if num_of_fragments == 1:
+            first_fragment[i+1].m = 0
+            first_fragment.show()
+            return first_fragment
+        
+        ##### num_of_fragments > 1
         
         
         
-        return first_fragment
+        return packet
