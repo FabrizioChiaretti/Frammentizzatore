@@ -12,8 +12,9 @@ def traffic_handler(packet):
     framm = frammentizzatore()
     pkt = framm.fragment(packet)
     
+    #for f in fragments: 
     packet.set_payload(bytes(pkt))
-    packet.accept()
+    packet.drop()
     
     print("frammentizzatore ends")
     return
