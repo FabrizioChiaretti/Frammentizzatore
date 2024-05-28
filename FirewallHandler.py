@@ -40,7 +40,7 @@ class FirewallHandler:
 
         elif self.protocol == "icmpv6":
             print("the protocol specified is icmpv6")
-            args = ["ip6tables", "-I", "OUTPUT", "-s", self.src_ipv6addr, "-d", self.dest_ipv6addr, "-p", self.protocol, "--icmpv6-type", "echo-request", "-j", "NFQUEUE", "--queue-num", str(1)]
+            args = ["ip6tables", "-I", "OUTPUT", "-p", self.protocol, "--icmpv6-type", "echo-request", "-j", "NFQUEUE", "--queue-num", str(1)]
     
         else:
             args = ["ip6tables", "-I", "OUTPUT", "-s", self.src_ipv6addr, "-d", self.dest_ipv6addr, "-p", self.protocol, "-j", "NFQUEUE", "--queue-num", str(1)]
@@ -69,7 +69,7 @@ class FirewallHandler:
             args = ["ip6tables", "-D", "OUTPUT", "-j", "NFQUEUE", "--queue-num", str(1)]
 
         elif self.protocol == 'icmpv6':
-            args = ["sudo", "ip6tables", "-D", "OUTPUT", "-s", self.src_ipv6addr, "-d", self.dest_ipv6addr, "-p", self.protocol, "--icmpv6-type", "echo-request", "-j", "NFQUEUE", "--queue-num", str(1)]
+            args = ["sudo", "ip6tables", "-D", "OUTPUT", "-p", self.protocol, "--icmpv6-type", "echo-request", "-j", "NFQUEUE", "--queue-num", str(1)]
     
         else:
             args = ["ip6tables", "-D", "OUTPUT", "-s", self.src_ipv6addr, "-d", self.dest_ipv6addr, "-p", self.protocol, "-j", "NFQUEUE", "--queue-num", str(1)]

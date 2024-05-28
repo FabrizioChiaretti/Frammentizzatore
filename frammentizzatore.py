@@ -11,6 +11,7 @@ class frammentizzatore:
     def fragment(self, input_packet, input_num_of_fragments = 1, fragment_size = 1280):
         
         packet = IPv6(input_packet.get_payload())
+        #packet.show()
         
         if IPv6ExtHdrFragment in packet:
             print("IPv6ExtHdrFragment already present")
@@ -43,10 +44,13 @@ class frammentizzatore:
         
         first_fragment = first_fragment / input_payload
         first_fragment.plen = len(raw(first_fragment.payload))
+        #print(len(raw(first_fragment)), len(raw(packet)))
         #first_fragment.show()
+        
         
         if input_num_of_fragments == 1 or len(raw(first_fragment)) <= fragment_size:
             first_fragment[IPv6ExtHdrFragment].m = 0
+            print("fragmentation ends, returning one fragment")
             return first_fragment
         
         ##### num_of_fragments > 1 #####
@@ -67,6 +71,7 @@ class frammentizzatore:
         remain = fragPartStr
         res = []
         fragOffset = 0 
+        j = 0
         
         while True:
             if (len(remain) > innerFragSize):
@@ -74,20 +79,23 @@ class frammentizzatore:
                 remain = remain[innerFragSize:]
                 fragHeader.offset = fragOffset    
                 fragOffset += (innerFragSize // 8)  
-                if IPv6 in UnfragPart:
-                    UnfragPart[IPv6].plen = None
+                if j > 0:
+                    fragHeader.nh = 59 # 59 = No next header
                 segment = UnfragPart / fragHeader / conf.raw_layer(load=tmp)
+                segment.plen = len(raw(segment.payload))
                 res.append(segment)
                 #segment.show()
-            else:
-                fragHeader.offset = fragOffset    # update offSet
+                j+=1
+            else: # last fragment
+                fragHeader.offset = fragOffset   
                 fragHeader.m = 0
-                if IPv6 in UnfragPart:
-                    UnfragPart[IPv6].plen = None
+                fragHeader.nh = 59 # 59 = No next header
                 segment = UnfragPart / fragHeader / conf.raw_layer(load=remain)
+                segment.plen = len(raw(segment.payload))
                 res.append(segment)
                 #segment.show()
                 break
-        
+            
+        print("fragmentation ends, returning", len(res), "fragments")
         return res
         
