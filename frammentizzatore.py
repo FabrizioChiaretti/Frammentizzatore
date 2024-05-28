@@ -47,8 +47,9 @@ class frammentizzatore:
         
         first_fragment = first_fragment / input_payload
         first_fragment.plen = len(raw(first_fragment.payload))
+        #print(first_fragment.plen)
         #print(len(raw(first_fragment)), len(raw(packet)))
-        print(len(raw(first_fragment.payload)), len(raw(packet.payload)))
+        #print(len(raw(first_fragment.payload)), packet.plen)
         #first_fragment.show()
         
         

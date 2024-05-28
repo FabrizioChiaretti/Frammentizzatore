@@ -15,12 +15,14 @@ def traffic_handler(packet):
     print("processing traffic...")
     framm = frammentizzatore()
     fragments = framm.fragment(packet, input_num_of_fragments=3)
+    #print("my fragment")
     #for f in fragments:
         #f.show()
     sendFragments(fragments)
     #original_packet = defragment6(fragments)
-    #original_packet.show()
-    #packet.set_payload(bytes(original_packet))
+    #print("input packet")
+    #IPv6(packet.get_payload()).show()
+    #packet.set_payload(bytes(fragments))
     packet.drop()
     print("frammentizzatore ends")
     return
@@ -42,7 +44,7 @@ def setFirewallRules(protocol = "", src_ipv6addr= "::", dest_ipv6addr="::"):
 
 def main():
 
-    firewall_handler = setFirewallRules()
+    firewall_handler = setFirewallRules(protocol = "icmpv6")
 
     nfqueue = NetfilterQueue()
     print("nfqueue created")
