@@ -11,6 +11,7 @@ class frammentizzatore:
     def fragment(self, input_packet, input_num_of_fragments = 1, fragment_size = 1280):
         
         packet = IPv6(input_packet.get_payload())
+        #print(len(raw(packet.payload)), packet.plen)
         #packet.show()
         
         if IPv6ExtHdrFragment in packet:
@@ -22,6 +23,7 @@ class frammentizzatore:
         
         basic_header = packet.copy()
         basic_header.remove_payload()
+        #basic_header.show()
         
         first_fragment = basic_header.copy()
         headers_to_skip = [0,60,43] # Hop-by-Hop Options, Destination Options, Routing Header
@@ -38,6 +40,7 @@ class frammentizzatore:
         first_fragment = first_fragment / IPv6ExtHdrFragment(nh = packet[i].nh, m=1, id = packet_id)
         fragHeader = first_fragment[IPv6ExtHdrFragment].copy()
         del fragHeader.payload
+        #fragHeader.show()
         
         input_payload = packet[i].payload.copy() # fragmentable part
         #input_payload.show()
@@ -45,6 +48,7 @@ class frammentizzatore:
         first_fragment = first_fragment / input_payload
         first_fragment.plen = len(raw(first_fragment.payload))
         #print(len(raw(first_fragment)), len(raw(packet)))
+        print(len(raw(first_fragment.payload)), len(raw(packet.payload)))
         #first_fragment.show()
         
         

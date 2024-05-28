@@ -4,11 +4,10 @@ from netfilterqueue import NetfilterQueue
 import platform
 from FirewallHandler import FirewallHandler
 from frammentizzatore import frammentizzatore
-from scapy.all import send, defragment6, raw, IPv6
+from scapy.all import send, defragment6, raw, IPv6, sr
 
 def sendFragments(fragments):
-    send(fragments, count=len(fragments))
-    
+    res = send(fragments)
 
 def traffic_handler(packet):
 
@@ -16,9 +15,13 @@ def traffic_handler(packet):
     print("processing traffic...")
     framm = frammentizzatore()
     fragments = framm.fragment(packet, input_num_of_fragments=3)
-    original_packet = defragment6(fragments)
-    packet.set_payload(bytes(original_packet))
-    packet.accept()
+    #for f in fragments:
+        #f.show()
+    sendFragments(fragments)
+    #original_packet = defragment6(fragments)
+    #original_packet.show()
+    #packet.set_payload(bytes(original_packet))
+    packet.drop()
     print("frammentizzatore ends")
     return
 
@@ -39,7 +42,7 @@ def setFirewallRules(protocol = "", src_ipv6addr= "::", dest_ipv6addr="::"):
 
 def main():
 
-    firewall_handler = setFirewallRules(protocol = "icmpv6")
+    firewall_handler = setFirewallRules()
 
     nfqueue = NetfilterQueue()
     print("nfqueue created")

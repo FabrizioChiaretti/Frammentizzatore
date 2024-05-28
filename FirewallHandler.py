@@ -2,7 +2,6 @@
 import subprocess
 
 
-
 class FirewallHandler:
     def __init__(self, os_type, protocol = "", src_ipv6addr= "::", dest_ipv6addr="::"):
         self.os_type = os_type
@@ -11,14 +10,12 @@ class FirewallHandler:
         self.dest_ipv6addr= dest_ipv6addr
 
 
-
     def insert_firewall_rules(self):
             if self.os_type == "linux":
                 self._insert_iptables_rules()
             else:
                 print("For now only Linux")
                 pass
-
 
 
     def delete_firewall_rules(self):
@@ -60,23 +57,19 @@ class FirewallHandler:
         print("firewall rules inserted")
 
 
-
     def _delete_iptables_rules(self):
     
         print("deleting firewall rules...")
 
         if self.protocol == "":
             args = ["ip6tables", "-D", "OUTPUT", "-j", "NFQUEUE", "--queue-num", str(1)]
-
         elif self.protocol == 'icmpv6':
             args = ["sudo", "ip6tables", "-D", "OUTPUT", "-p", self.protocol, "--icmpv6-type", "echo-request", "-j", "NFQUEUE", "--queue-num", str(1)]
-    
         else:
             args = ["ip6tables", "-D", "OUTPUT", "-s", self.src_ipv6addr, "-d", self.dest_ipv6addr, "-p", self.protocol, "-j", "NFQUEUE", "--queue-num", str(1)]
 
         for arg in args:
             print(arg + ' ', end = '')
-        
         print('')
         
         proc = subprocess.Popen(args)
