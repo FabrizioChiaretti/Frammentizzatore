@@ -3,19 +3,21 @@ import subprocess
 
 
 class FirewallHandler:
-    def __init__(self, os_type, protocol = "", src_ipv6addr= "::", dest_ipv6addr="::"):
+    
+    def __init__(self, os_type, protocol = "", dest_ipv6addr="", dstPort = ""):
         self.os_type = os_type
         self.protocol = protocol
-        self.src_ipv6addr= src_ipv6addr
-        self.dest_ipv6addr= dest_ipv6addr
+        self.dest_ipv6addr = dest_ipv6addr
+        self.dstPort = dstPort
+        self.args = []
 
 
     def insert_firewall_rules(self):
-            if self.os_type == "linux":
-                self._insert_iptables_rules()
-            else:
-                print("For now only Linux")
-                pass
+        if self.os_type == "linux":
+            self._insert_iptables_rules()
+        else:
+            print("For now only Linux")
+            pass
 
 
     def delete_firewall_rules(self):
@@ -29,57 +31,55 @@ class FirewallHandler:
 
     def _insert_iptables_rules(self):
 
-        print("inserting firewall rules...", self.protocol)
-    
-        if self.protocol == "":
-            print("protocol not specified")
-            args = ["ip6tables", "-I", "OUTPUT", "-j", "NFQUEUE", "--queue-num", str(1)]
+        print("Inserting firewall rules...", self.protocol)
 
-        elif self.protocol == "icmpv6":
-            print("the protocol specified is icmpv6")
-            args = ["ip6tables", "-I", "OUTPUT", "-p", self.protocol, "--icmpv6-type", "echo-request", "-j", "NFQUEUE", "--queue-num", str(1)]
+        self.args = ["ip6tables", "-I", "OUTPUT"]
     
-        else:
-            args = ["ip6tables", "-I", "OUTPUT", "-s", self.src_ipv6addr, "-d", self.dest_ipv6addr, "-p", self.protocol, "-j", "NFQUEUE", "--queue-num", str(1)]
+        if self.dest_ipv6addr != "":
+            self.args = self.args + (["-d", self.dest_ipv6addr])
+            
+        if self.protocol != "": 
+            self.args = self.args + (["-p", self.protocol])
+            if self.protocol == "icmpv6":
+                self.args = self.args + (["--icmpv6-type", "echo-request"])
         
-        for arg in args:
+        if self.dstPort != "" and (self.protocol == "tcp" or self.protocol == "udp"): 
+            self.args = self.args + (["--dport", self.dstPort])
+        
+        self.args = self.args + (["-j", "NFQUEUE", "--queue-num", str(1)])
+        
+        for arg in self.args:
             print(arg + ' ', end = '')
-        
         print('')
             
-        proc = subprocess.Popen(args)
+        proc = subprocess.Popen(self.args)
             
         try:
             outs, errs = proc.communicate(timeout=15)
         except subprocess.TimeoutExpired:
             proc.kill()
 
-        print("firewall rules inserted")
+        print("Firewall rules inserted")
 
 
     def _delete_iptables_rules(self):
     
-        print("deleting firewall rules...")
+        print("Deleting firewall rules...")
 
-        if self.protocol == "":
-            args = ["ip6tables", "-D", "OUTPUT", "-j", "NFQUEUE", "--queue-num", str(1)]
-        elif self.protocol == 'icmpv6':
-            args = ["sudo", "ip6tables", "-D", "OUTPUT", "-p", self.protocol, "--icmpv6-type", "echo-request", "-j", "NFQUEUE", "--queue-num", str(1)]
-        else:
-            args = ["ip6tables", "-D", "OUTPUT", "-s", self.src_ipv6addr, "-d", self.dest_ipv6addr, "-p", self.protocol, "-j", "NFQUEUE", "--queue-num", str(1)]
+        self.args[1] = "-D"
 
-        for arg in args:
+        for arg in self.args:
             print(arg + ' ', end = '')
         print('')
         
-        proc = subprocess.Popen(args)
+        proc = subprocess.Popen(self.args)
         
         try:
             outs, errs = proc.communicate(timeout=15)
         except subprocess.TimeoutExpired:
             proc.kill()
 
-        print("firewall rules deleted")
+        print("Firewall rules deleted")
 
 
 

@@ -5,20 +5,20 @@ from scapy.config import conf
 class frammentizzatore:
     
     def __init__(self, max_fragment_lenght = 1280):
-        self.max_fragment_leght = max_fragment_lenght
+        self.max_fragment_lenght = max_fragment_lenght
+        self.min_payload_lenght = 8
     
     
-    def fragment(self, input_packet, input_num_of_fragments = 1, fragment_size = 1280):
+    def fragment(self, input_packet, fragment_size = 1280):
         
         packet = IPv6(input_packet.get_payload())
-        #print(len(raw(packet.payload)), packet.plen)
         #packet.show()
         
         if IPv6ExtHdrFragment in packet:
             print("IPv6ExtHdrFragment already present")
             return packet
         if IPv6 not in packet:
-            print("Can not found IP header")
+            print("Can not found IPv6 header")
             return packet
         
         basic_header = packet.copy()
@@ -38,8 +38,9 @@ class frammentizzatore:
         packet_id = getrandbits(32)
         
         first_fragment = first_fragment / IPv6ExtHdrFragment(nh = packet[i].nh, m=1, id = packet_id)
+        #first_fragment.show()
         fragHeader = first_fragment[IPv6ExtHdrFragment].copy()
-        del fragHeader.payload
+        FragHeaderLen = len(raw(first_fragment[IPv6ExtHdrFragment]))
         #fragHeader.show()
         
         input_payload = packet[i].payload.copy() # fragmentable part
@@ -52,26 +53,27 @@ class frammentizzatore:
         #print(len(raw(first_fragment.payload)), packet.plen)
         #first_fragment.show()
         
-        
-        if input_num_of_fragments == 1 or len(raw(first_fragment)) <= fragment_size:
+        if len(raw(first_fragment)) <= fragment_size:
             first_fragment[IPv6ExtHdrFragment].m = 0
-            print("fragmentation ends, returning one fragment")
+            print("Fragmentation ends, returning one fragment")
             return first_fragment
         
         ##### num_of_fragments > 1 #####
-        
         fragPart_len = len(raw(first_fragment[IPv6ExtHdrFragment].payload)) # len of the payload to fragment
+        if fragPart_len < self.min_payload_lenght:
+            return first_fragment
+        
         fragPartStr = raw(first_fragment[IPv6ExtHdrFragment].payload)
-        UnfragPartLen = len(raw(first_fragment)) - fragPart_len - 8 # 8 = fragment header lenght
+        UnfragPartLen = len(raw(first_fragment)) - fragPart_len - FragHeaderLen 
         UnfragPart = first_fragment.copy()
         del UnfragPart[IPv6ExtHdrFragment].underlayer.payload # take the part of the packet before the IPv6ExtHdrFragment
         #UnfragPart.show()
         
-        if (fragment_size > self.max_fragment_leght) or (fragment_size -8 -UnfragPartLen) % 8 != 0:
+        if (fragment_size > self.max_fragment_lenght) or ((fragment_size -FragHeaderLen -UnfragPartLen) % 8 != 0):
             print("Invalid input fragment size")
             return packet
     
-        innerFragSize = fragment_size -8 -UnfragPartLen
+        innerFragSize = fragment_size -FragHeaderLen -UnfragPartLen
         
         remain = fragPartStr
         res = []

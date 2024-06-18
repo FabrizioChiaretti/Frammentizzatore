@@ -1,0 +1,26 @@
+{	
+	"protocol":"", 
+	
+	"dstPort":"",
+
+	"ipv6Dest":"", 
+	
+	"type":"regular-overlapping-headerChain", 
+	
+	"fragmentSize": "1280",
+
+	"fragments":[ 
+	
+		{"PayloadLenght":"1007", "HopLimit":"", "FO":"0", 
+			"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+			{"Destination":{}}, {"Mobility":{}}]}, 
+
+		{"PayloadLenght":"16", "HopLimit":"", "FO":"992", 
+			"HeaderChain":[{"TCP":{}}]}, 
+
+		{"PayloadLenght":"", "HopLimit":"", "FO":"1008", 
+			"HeaderChain":[{"Fragment":{}}, {"Destination":{}}]}
+	
+	]
+}
+
