@@ -3,8 +3,10 @@
 from netfilterqueue import NetfilterQueue
 import platform
 from FirewallHandler import FirewallHandler
+from input_handler import inputHandler
 from frammentizzatore import frammentizzatore
 from scapy.all import send, defragment6, IPv6, raw
+import json
 
 
 def sendFragments(fragments):
@@ -14,6 +16,7 @@ def traffic_handler(packet):
     
     print("Traffic intercepted")
     print("Processing traffic...")
+    
     framm = frammentizzatore()
     fragments = framm.fragment(packet)
     #packet.set_payload(bytes(fragments))
@@ -37,9 +40,19 @@ def setFirewallRules(protocol = "icmpv6", dest_ipv6addr="", dstPort = ""):
     return firewall_handler
 
 
-
 def main():
 
+    input_file = open("input.json", "r")
+    if input_file == None:
+        print("error: input.json not found")
+        exit(1)
+
+    input_handler = inputHandler(input_file)
+    
+    res = input_handler.parse_input()
+    if res == False:
+        exit(1)
+    
     firewall_handler = setFirewallRules()
     print("Firewall rules set")
 

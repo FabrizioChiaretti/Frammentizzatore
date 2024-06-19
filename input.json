@@ -1,13 +1,13 @@
 {	
-	"protocol":"", 
+	"protocol": "", 
 	
-	"dstPort":"",
+	"dstPort": 100,
 
 	"ipv6Dest":"", 
 	
 	"type":"regular-overlapping-headerChain", 
 	
-	"fragmentSize": "1280",
+	"fragmentSize": 1280,
 
 	"fragments":[ 
 	
