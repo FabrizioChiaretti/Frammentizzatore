@@ -3,10 +3,13 @@
 from netfilterqueue import NetfilterQueue
 import platform
 from FirewallHandler import FirewallHandler
+from log import log
 from input_handler import inputHandler
 from frammentizzatore import frammentizzatore
 from scapy.all import send, defragment6, IPv6, raw
-import json
+
+
+logs_handler = None
 
 
 def sendFragments(fragments):
@@ -14,9 +17,7 @@ def sendFragments(fragments):
 
 def traffic_handler(packet):
     
-    print("Traffic intercepted")
-    print("Processing traffic...")
-    
+    logs_handler.logger.debug("Traffic intercepted")
     framm = frammentizzatore()
     fragments = framm.fragment(packet)
     #packet.set_payload(bytes(fragments))
@@ -26,7 +27,7 @@ def traffic_handler(packet):
     #p = defragment6(fragments)
     #packet.accept()
     packet.drop()
-    print("frammentizzatore ends")
+    
     return
 
 
@@ -42,9 +43,12 @@ def setFirewallRules(protocol = "icmpv6", dest_ipv6addr="", dstPort = ""):
 
 def main():
 
+    global logs_handler
+    logs_handler = log()
+
     input_file = open("input.json", "r")
     if input_file == None:
-        print("error: input.json not found")
+        logs_handler.logger.error("input.json not found")
         exit(1)
 
     input_handler = inputHandler(input_file)
@@ -54,18 +58,16 @@ def main():
         exit(1)
     
     firewall_handler = setFirewallRules()
-    print("Firewall rules set")
+    logs_handler.logger.info("Firewall rules set")
 
     nfqueue = NetfilterQueue()
-    print("Netfilter queue object created")
 
     nfqueue.bind(1, traffic_handler)
-    print("Binding to queue executed")
     
     try:
          nfqueue.run()
     except KeyboardInterrupt:
-        print("Stopped")
+        logs_handler.logger.info("Frammentizzatore Stopped")
     finally:
         firewall_handler.delete_firewall_rules()
         nfqueue.unbind()
