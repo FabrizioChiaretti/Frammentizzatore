@@ -1,13 +1,13 @@
 {	
-	"protocol": "",
+	"protocol": "icmpv6",
 	
-	"dstPort": 100,
+	"dstPort": -1,
 
 	"ipv6Dest":"", 
 	
-	"type":"", 
+	"type":"regular", 
 	
-	"fragmentSize": 0,
+	"fragmentSize": 64,
 
 	"fragments":[ 
 	
