@@ -5,7 +5,7 @@
 
 	"ipv6Dest":"", 
 	
-	"type":"regular", 
+	"type":"overlapping", 
 	
 	"fragmentSize": 64,
 

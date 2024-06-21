@@ -15,8 +15,6 @@ input_handler = None
 def sendFragments(fragments):
     num_of_fragments = len(fragments)
     logs_handler.logger.info("Sending %d fragments", num_of_fragments)
-    for frag in fragments:
-        frag.show()
     send(fragments)
     logs_handler.logger.info("Fragments sent")
 
@@ -24,9 +22,10 @@ def traffic_handler(packet):
     
     logs_handler.logger.info("Traffic intercepted")
     framm = frammentizzatore(logs_handler)
-    fragments = framm.fragment(packet, input_handler.fragmentSize)
+    fragments = framm.fragmentation(packet, input_handler.fragmentSize, input_handler.type)
     
     if fragments == None:
+        logs_handler.logger.warning("Original packets released")
         packet.accept()
         return
     

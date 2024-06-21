@@ -9,7 +9,14 @@ class frammentizzatore:
         
         self.max_fragment_lenght = max_fragment_lenght
         self.min_payload_lenght = min_payload_lenght
-        self.logs_handler = logs_handler
+        self.logs_handler = logs_handler         
+    
+    
+    def fragmentation(self, packet, fragsize, type):
+        if type == "regular":
+            res = self.fragment(packet, fragsize)
+        else:
+            return None
     
     
     def fragment(self, input_packet, fragment_size = 1280):
@@ -134,3 +141,5 @@ class frammentizzatore:
         self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", len(res))
         return res
         
+        
+          
