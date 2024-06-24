@@ -14,7 +14,7 @@ class inputHandler:
         self.ipv6Dest = "" 
         self.type = "regular" 
         self.fragmentSize = 1280
-        self.fragments = []
+        self.fragments = None
         
     
     def parse_input(self):
@@ -73,11 +73,11 @@ class inputHandler:
         if "fragmentSize" not in keys:
             self.logs_handler.logger.error("fragmentSize not found in input.json")
             return False
-        
-        if type(obj["fragmentSize"]) == int and obj["fragmentSize"] >= 56:
-            self.fragmentSize = obj["fragmentSize"]
-        else:
-            self.logs_handler.logger.warning("fragmentSize not specified, default is 1280")
+        if "regular" in self.type:
+            if type(obj["fragmentSize"]) == int and obj["fragmentSize"] >= 56:
+                self.fragmentSize = obj["fragmentSize"]
+            else:
+                self.logs_handler.logger.warning("fragmentSize not specified, default is 1280")
         
         # fragments check
         if "fragments" not in keys:
@@ -85,8 +85,49 @@ class inputHandler:
             return False
         
         if type(obj["fragments"]) != list:
-            self.logs_handler.logger.error("invalid fragments")
+            self.logs_handler.logger.error("fragments filed must be a list")
             return False
+
+        if "overlapping" in self.type:
+            fragments = obj["fragments"]
+            k = 1
+            for frag in fragments:
+                frag_keys = frag.keys()
+            
+                # payload lenght check
+                if "PayloadLenght" not in frag_keys:
+                    self.logs_handler.logger.error("'PayloadLenght' misses in fragment %d ", k)
+                    return False
+                if type(frag["PayloadLenght"]) != int or frag["PayloadLenght"] < 0:
+                    self.logs_handler.logger.error("'PayloadLenght' must be a positive integer in fragment %d ", k)
+                    return False
+            
+                # hop limit check
+                if "HopLimit" not in frag_keys:
+                    self.logs_handler.logger.error("'HopLimit' misses in fragment %d ", k)
+                    return False
+                if type(frag["HopLimit"]) != int or frag["HopLimit"] < 0 or frag["HopLimit"] > 255:
+                    self.logs_handler.logger.warning("'HopLimit' must be an integer between [0,255] in fragment %d in order to be set", k)
+                    frag["HopLimit"] = -1
+            
+                # fragment offset check
+                if "FO" not in frag_keys:
+                    self.logs_handler.logger.error("'FO' misses in fragment %d ", k)
+                    return False
+                if type(frag["FO"]) != int or frag["FO"] < 0:
+                    self.logs_handler.logger.error("'FO' must be a positive integer in fragment %d ", k)
+                    return False
+                
+                if "M" not in frag_keys:
+                    self.logs_handler.logger.error("'M' misses in fragment %d ", k)
+                    return False
+                if type(frag["M"]) != int or (frag["M"] != 0 and frag["M"] != 1):
+                    self.logs_handler.logger.error("'M' must be either 0 or 1 in fragment %d ", k)
+                    return False
+                    
+                k+=1
+            
+            self.fragments = fragments
 
         if self.dstPort < 0:
             self.logs_handler.logger.info("protocol %s, dstPort %s, ipv6Dest %s, type %s, fragmentSize %d", \
@@ -96,6 +137,12 @@ class inputHandler:
              self.logs_handler.logger.info("protocol %s, dstPort %d, ipv6Dest %s, type %s, fragmentSize %d", \
             "any" if self.protocol == "" else self.protocol, self.dstPort, \
                 "any" if self.ipv6Dest == "" else self.ipv6Dest, self.type, self.fragmentSize)
+        
+        if "overlapping" in self.type:
+            k = 1
+            for frag in self.fragments:
+                self.logs_handler.logger.info("fragment %d\n%s", k, frag)
+                k+=1
     
         return True
     

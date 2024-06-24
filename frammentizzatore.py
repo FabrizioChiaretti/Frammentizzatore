@@ -5,36 +5,114 @@ from scapy.config import conf
 
 class frammentizzatore:
     
-    def __init__(self, logs_handler, max_fragment_lenght = 1280, min_payload_lenght = 8):
+    def __init__(self, logs_handler, input_handler, max_fragment_lenght = 1280, min_payload_lenght = 8):
         
         self.max_fragment_lenght = max_fragment_lenght
         self.min_payload_lenght = min_payload_lenght
-        self.logs_handler = logs_handler         
+        self.logs_handler = logs_handler  
+        self.input_handler = input_handler       
     
     
-    def fragmentation(self, packet, fragsize, type):
-        if type == "regular":
-            res = self.fragment(packet, fragsize)
-        else:
+    def headerCheck(self, packet):
+        
+        if self.input_handler.fragmentSize > self.max_fragment_lenght:
+            self.logs_handler.logger.error("The maximum fragment size is %d", self.max_fragment_lenght)
+            return False
+        
+        if IPv6ExtHdrFragment in packet:
+            self.logs_handler.logger.error("IPv6ExtHdrFragment already present")
+            return False
+        
+        if IPv6 not in packet:
+            self.logs_handler.logger.error("Can not found IPv6 header")
+            return False
+        
+        return True
+    
+    
+    def fragmentation(self, packet):
+        res = None
+        if self.input_handler.type == "regular":
+            res = self.fragment(packet, self.input_handler.fragmentSize)
+        elif self.input_handler.type == "overlapping":
+            res = self.overlapping_fragmentation(packet)
+        return res
+    
+    
+    def overlapping_fragmentation(self, input_packet):
+        
+        packet = IPv6(input_packet.get_payload())
+        #packet.show()
+        
+        tmp = self.headerCheck(packet)
+        if tmp == False:
             return None
-    
+        
+        # take the basic header
+        basic_header = packet.copy()
+        basic_header.remove_payload()
+        
+        first_fragment = basic_header.copy()
+        headers_to_skip = [0,60,43] # Hop-by-Hop Options, Destination Options, Routing Header
+        i = 0
+        
+        while (int(packet[i].nh) in headers_to_skip):
+            first_fragment = first_fragment / packet[i+1]
+            i +=1
+        
+        input_payload = packet[i].payload.copy()
+        #input_payload.show()
+        first_fragment[i].nh = 44 # netx header = fragment header
+        packet_id = getrandbits(32)
+        UnfragPart = first_fragment.copy()
+        UnfragPartLen = len(raw(UnfragPart))
+        #UnfragPart.show()
+        first_fragment = first_fragment / IPv6ExtHdrFragment(nh = packet[i].nh, m=1, id = packet_id)
+        #first_fragment.show()
+        fragHeader = first_fragment[IPv6ExtHdrFragment].copy()
+        fragPartLen = len(raw(input_payload)) # len of the payload to fragment
+        fragPartStr = raw(input_payload.copy())
+        #self.logs_handler.logger.info("UnfragPartLen %d, FragHeaderLen %d, fragPartLen %d", \
+        #    UnfragPartLen, FragHeaderLen, fragPartLen)
+        
+        res = [] 
+        j = 0
+        fragments = self.input_handler.fragments
+        for frag in fragments:
+            payload_lenght = frag["PayloadLenght"]
+            fragment_offset = frag["FO"]
+            hop_limit = frag["HopLimit"]
+            if (fragPartLen >= fragment_offset + payload_lenght):
+                tmp = fragPartStr[fragment_offset:fragment_offset+payload_lenght]
+                #self.logs_handler.logger.info("len tmp %d", len(tmp))
+                fragHeader.offset = fragment_offset // 8
+                fragHeader.m = frag["M"]
+                if j > 0:
+                    fragHeader.nh = 59 # no next header for all segments except the first
+                segment = UnfragPart / fragHeader / conf.raw_layer(load=tmp)
+                segment.plen = len(raw(segment.payload))
+                if hop_limit >= 0:
+                    segment.hlim = hop_limit
+                res.append(segment)
+                segment.show()
+            else: # something goes wrong
+                self.logs_handler.logger.error("Something goes wrong while creating fragment %d, check payload lenght and fragment offset inserted", j+1)
+                return None
+            j+=1
+                
+        self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", len(res))
+        return res
     
     def fragment(self, input_packet, fragment_size = 1280):
         
         packet = IPv6(input_packet.get_payload())
         #packet.show()
         
-        if fragment_size > self.max_fragment_lenght:
-            self.logs_handler.logger.error("The maximum fragment size is %d", self.max_fragment_lenght)
+        tmp = self.headerCheck(packet)
+        if tmp == False:
             return None
         
-        if IPv6ExtHdrFragment in packet:
-            self.logs_handler.logger.error("IPv6ExtHdrFragment already present")
-            return None
-        if IPv6 not in packet:
-            self.logs_handler.logger.error("Can not found IPv6 header")
-            return None
-        
+        # take the basic header
         basic_header = packet.copy()
         basic_header.remove_payload()
         #basic_header.show()
@@ -47,7 +125,7 @@ class frammentizzatore:
             first_fragment = first_fragment / packet[i+1]
             i +=1
             
-        first_fragment[i].nh = 44 # netx header = fragment header
+        first_fragment[i].nh = 44 # next header = fragment header
         packet_id = getrandbits(32)
         
         first_fragment = first_fragment / IPv6ExtHdrFragment(nh = packet[i].nh, m=1, id = packet_id)

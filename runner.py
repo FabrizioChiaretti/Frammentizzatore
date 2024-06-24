@@ -21,8 +21,8 @@ def sendFragments(fragments):
 def traffic_handler(packet):
     
     logs_handler.logger.info("Traffic intercepted")
-    framm = frammentizzatore(logs_handler)
-    fragments = framm.fragmentation(packet, input_handler.fragmentSize, input_handler.type)
+    framm = frammentizzatore(logs_handler, input_handler)
+    fragments = framm.fragmentation(packet)
     
     if fragments == None:
         logs_handler.logger.warning("Original packets released")
@@ -54,8 +54,9 @@ def main():
     global logs_handler
     logs_handler = log()
 
-    input_file = open("input.json", "r")
-    if input_file == None:
+    try:
+        input_file = open("input.json", "r")
+    except OSError:
         logs_handler.logger.error("input.json not found")
         exit(1)
 
