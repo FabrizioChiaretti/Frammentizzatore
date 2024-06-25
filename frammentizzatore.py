@@ -31,6 +31,7 @@ class frammentizzatore:
     
     
     def fragmentation(self, packet):
+        
         res = None
         if self.input_handler.type == "regular":
             res = self.fragment(packet, self.input_handler.fragmentSize)
@@ -61,13 +62,33 @@ class frammentizzatore:
             i +=1
         
         input_payload = packet[i].payload.copy()
+        next_header_chain = [] # header chain placed after the fragment header
+        j = i
+        while (packet[j].nh not in [59, 6, 17, 58]): # no next header, udp, tcp, icmpv6
+            input_payload[j].remove_payload()
+            next_header_chain.append(input_payload[j])
+            input_payload = packet[j+1].payload.copy()
+            j+=1
+        
+        if int(packet[j].nh) == 6 or int(packet[j].nh) == 17: # udp or tcp
+            input_payload[j].show()
+            input_payload[j].remove_payload()
+            next_header_chain.append(input_payload[j])
+        
+        if int(packet[j].nh) == 58:
+            del input_payload[j].data
+            next_header_chain.append(input_payload[j])
+            
+        #for h in next_header_chain:
+        #    h.show()
+        input_payload = packet[i].payload.copy() # payload coming next to the fragment header
         #input_payload.show()
         first_fragment[i].nh = 44 # netx header = fragment header
         packet_id = getrandbits(32)
         UnfragPart = first_fragment.copy()
         UnfragPartLen = len(raw(UnfragPart))
         #UnfragPart.show()
-        first_fragment = first_fragment / IPv6ExtHdrFragment(nh = packet[i].nh, m=1, id = packet_id)
+        first_fragment = first_fragment / IPv6ExtHdrFragment(id = packet_id) 
         #first_fragment.show()
         fragHeader = first_fragment[IPv6ExtHdrFragment].copy()
         fragPartLen = len(raw(input_payload)) # len of the payload to fragment
@@ -77,31 +98,65 @@ class frammentizzatore:
         
         res = [] 
         j = 0
+        nh = packet[i].nh
         fragments = self.input_handler.fragments
         for frag in fragments:
             payload_lenght = frag["PayloadLenght"]
             fragment_offset = frag["FO"]
             hop_limit = frag["HopLimit"]
+            
             if (fragPartLen >= fragment_offset + payload_lenght):
-                tmp = fragPartStr[fragment_offset:fragment_offset+payload_lenght]
-                #self.logs_handler.logger.info("len tmp %d", len(tmp))
+                raw_payload = fragPartStr[fragment_offset:fragment_offset+payload_lenght]
+                #payload = input_payload[fragment_offset:fragment_offset+payload_lenght]
+                
+                if len(raw_payload) > 0 and len(next_header_chain) > 0:
+                    fragHeader.nh = nh
+                    raw_payload_len = len(raw_payload) 
+                    while nh not in [59, 6, 17, 58] or raw_payload_len > 0:
+                        header = next_header_chain.pop(0)
+                        if raw_payload_len < len(raw(header)):
+                            self.logs_handler.logger.error("Something goes wrong while creating fragment %d, payload lenght should be at least %d bytes higher", j+1, len(raw(header)) - raw_payload_len)
+                            return None
+
+                        raw_payload_len -= len(raw(header))
+                        nh = header.nh
+                        
+                    if nh in [59, 6, 17, 58]:
+                        header = next_header_chain.pop(0)
+                        if raw_payload_len < len(raw(header)):
+                            self.logs_handler.logger.error("Something goes wrong while creating fragment %d, payload lenght should be at least %d bytes higher", j+1, len(raw(header))-raw_payload_len)   
+                            return None
+                        else:
+                            nh = 59
+                        
+                else:
+                    fragHeader.nh = 59 # no next header
+                
                 fragHeader.offset = fragment_offset // 8
                 fragHeader.m = frag["M"]
-                if j > 0:
-                    fragHeader.nh = 59 # no next header for all segments except the first
-                segment = UnfragPart / fragHeader / conf.raw_layer(load=tmp)
+                #if j > 0:
+                #    fragHeader.nh = 58 # no next header for all segments except the first
+                segment = UnfragPart / fragHeader / conf.raw_layer(load=raw_payload)
                 segment.plen = len(raw(segment.payload))
+                
                 if hop_limit >= 0:
                     segment.hlim = hop_limit
+                
+                if len(raw(segment)) > self.max_fragment_lenght:
+                    self.logs_handler.logger.error("The lenght of the fragment %d is greater than the maximum fragment lenght (1280)", j+1)
+                    return None
+                
                 res.append(segment)
-                segment.show()
+                #segment.show()
             else: # something goes wrong
                 self.logs_handler.logger.error("Something goes wrong while creating fragment %d, check payload lenght and fragment offset inserted", j+1)
                 return None
+            
             j+=1
                 
         self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", len(res))
         return res
+    
     
     def fragment(self, input_packet, fragment_size = 1280):
         
@@ -135,7 +190,7 @@ class frammentizzatore:
         #fragHeader.show()
         
         input_payload = packet[i].payload.copy() # fragmentable part
-        payload_check = packet[i].payload.copy()#packet[i+1].payload.show()
+        payload_check = packet[i].payload.copy() # packet[i+1].payload.show()
         #payload_check.show()
         next_header_chain_lenght = 0        
         j = i     
