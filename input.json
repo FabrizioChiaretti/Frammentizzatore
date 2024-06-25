@@ -1,5 +1,5 @@
 {	
-	"protocol": "tcp",
+	"protocol": "icmpv6",
 	
 	"dstPort": 80,
 
@@ -10,14 +10,26 @@
 	"fragmentSize": 1000,
 
 	"fragments":[ 
-	
-		{"PayloadLenght":0, "HopLimit":-1, "FO":0, "M": 1,
+
+		{"PayloadLenght":200, "HopLimit":-1, "FO":0, "M": 1,
+		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+		{"Destination":{}}, {"Mobility":{}}]},
+
+		{"PayloadLenght":1000, "HopLimit":-1, "FO":200, "M": 1,
 			"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
-			{"Destination":{}}, {"Mobility":{}}]}, 
+			{"Destination":{}}, {"Mobility":{}}]},
 
-		{"PayloadLenght":40, "HopLimit":"", "FO":0, "M": 0,
-			"HeaderChain":[{"Fragment":{}}, {"Destination":{}}]}
+		{"PayloadLenght":1000, "HopLimit":-1, "FO":1200, "M": 1,
+			"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+			{"Destination":{}}, {"Mobility":{}}]},
 
+		{"PayloadLenght":1000, "HopLimit":-1, "FO":2200, "M": 1,
+			"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+			{"Destination":{}}, {"Mobility":{}}]},
+		
+		{"PayloadLenght":-1, "HopLimit":-1, "FO":3200, "M": 0,
+			"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+			{"Destination":{}}, {"Mobility":{}}]}
 	
 	]
 }

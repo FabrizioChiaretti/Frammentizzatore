@@ -98,7 +98,7 @@ class inputHandler:
                 if "PayloadLenght" not in frag_keys:
                     self.logs_handler.logger.error("'PayloadLenght' misses in fragment %d ", k)
                     return False
-                if type(frag["PayloadLenght"]) != int or frag["PayloadLenght"] < 0:
+                if type(frag["PayloadLenght"]) != int:
                     self.logs_handler.logger.error("'PayloadLenght' must be a positive integer in fragment %d ", k)
                     return False
             
