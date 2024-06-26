@@ -1,4 +1,4 @@
-from scapy.all import IPv6, IPv6ExtHdrFragment,  IPv6ExtHdrDestOpt, raw
+from scapy.all import IPv6, IPv6ExtHdrFragment,  TCP, UDP, ICMPv6EchoRequest, raw, Packet
 from random import getrandbits
 from scapy.config import conf
 
@@ -30,6 +30,66 @@ class frammentizzatore:
         return True
     
     
+    def checksum_computation(self, basic_header, fragments):
+        
+        tmp = fragments.copy()
+        segments = []
+        while len(tmp) > 0:
+            min_pos = 0
+            min_offset = tmp[0][IPv6ExtHdrFragment].offset
+            for p in tmp:
+                cur_offset = p[IPv6ExtHdrFragment].offset
+                if cur_offset < min_offset:
+                    min_pos = 0
+                    min_offset = cur_offset
+            pkt = IPv6(tmp[min_pos])
+            segments.append(pkt)
+            del tmp[min_pos]
+        
+        final_packet = basic_header
+        upper_layer_header = None
+        protocol = None
+        for frag in segments:
+            if TCP in frag:
+                upper_layer_header = frag[TCP]
+                protocol = 6
+            if UDP in frag:
+                upper_layer_header = frag[UDP]
+                protocol = 17
+            if ICMPv6EchoRequest in frag: 
+                upper_layer_header = frag[ICMPv6EchoRequest]
+                protocol = 58
+        
+        if protocol == None:
+            self.logs_handler.logger.error("Can not find upper layer protocol, can not compute upper layer checksum")
+            return segments
+        
+        if upper_layer_header == None:
+            self.logs_handler.logger.error("Can not find upper layer header, can not compute upper layer checksum")
+            return segments
+        
+        i = 0
+        for frag in segments:     
+            fragment_header = frag[IPv6ExtHdrFragment]
+            nh = frag[IPv6ExtHdrFragment].nh
+            payload = fragment_header.payload
+            while nh not in [59, 58, 6, 17] and len(payload > 0):
+                payload =  payload.payload      
+            
+            #payload.show()   
+            raw_payload = raw(payload)
+            first_byte = fragment_header.offset
+            last_byte = len(raw_payload)
+            if len(raw_payload) > 0:
+                if i == 0:
+                    final_packet = final_packet / payload
+                else:
+                    final_packet.payload[first_byte:last_byte] = raw_payload # non è corretto
+            i+=1
+            
+        return segments
+    
+    
     def fragmentation(self, packet):
         
         res = None
@@ -43,6 +103,7 @@ class frammentizzatore:
     def overlapping_fragmentation(self, input_packet):
         
         packet = IPv6(input_packet.get_payload())
+        
         #self.logs_handler.logger.debug("/////////////////// original packet")
         #packet.show()
         
@@ -106,7 +167,7 @@ class frammentizzatore:
             last_byte = frag["PayloadLenght"] + fragment_offset if frag["PayloadLenght"] >= 0 else len(input_payload)
             hop_limit = frag["HopLimit"]
             if (fragPartLen >= last_byte):
-                self.logs_handler.logger.debug("last byte %d, fragment offset %d", last_byte, fragment_offset)
+                #self.logs_handler.logger.debug("last byte %d, fragment offset %d", last_byte, fragment_offset)
                 raw_payload = fragPartStr[fragment_offset:last_byte]
                 #self.logs_handler.logger.debug("len raw payload %d", len(raw_payload))
                 #payload = input_payload[fragment_offset:last_byte]
@@ -137,7 +198,7 @@ class frammentizzatore:
                 fragHeader.m = frag["M"]
                 #if j > 0:
                 #    fragHeader.nh = 58 # no next header for all segments except the first
-                segment = UnfragPart / fragHeader / conf.raw_layer(load=raw_payload)
+                segment = UnfragPart / fragHeader / raw_payload
                 segment.plen = len(raw(segment.payload))
                 
                 if hop_limit >= 0:
@@ -155,7 +216,11 @@ class frammentizzatore:
                 return None
             
             j+=1
-                
+        
+        res = self.checksum_computation(basic_header, res)
+        #for frag in res:
+        #    frag.show()  
+            
         self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", len(res))
         return res
     
