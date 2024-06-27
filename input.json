@@ -1,21 +1,22 @@
 {	
-	"protocol": "tcp",
+	"protocol": "udp",
 	
-	"dstPort": 80,
+	"dstPort": -1,
 
 	"ipv6Dest":"", 
 	
-	"type":"overlapping", 
+	"type":"regular", 
 	
 	"fragmentSize": 1000,
 
 	"fragments":[ 
 
-		
 		{"PayloadLenght":-1, "HopLimit":-1, "FO":0, "M": 0,
-			"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
-			{"Destination":{}}, {"Mobility":{}}]}
-	
+		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+		{"Destination":{}}, {"Mobility":{}}]}
+
+		
+
 	]
 }
 

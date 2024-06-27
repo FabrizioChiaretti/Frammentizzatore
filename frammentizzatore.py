@@ -69,25 +69,40 @@ class frammentizzatore:
             return segments
         
         i = 0
-        for frag in segments:     
-            fragment_header = frag[IPv6ExtHdrFragment]
-            nh = frag[IPv6ExtHdrFragment].nh
-            payload = fragment_header.payload
-            while nh not in [59, 58, 6, 17] and len(payload > 0):
-                payload =  payload.payload      
+        for fragment in segments:     
+            fragment_header = fragment[IPv6ExtHdrFragment]
+            nh = fragment[IPv6ExtHdrFragment].nh
+            fragment_payload = fragment_header.payload
+            while nh not in [59, 58, 6, 17] and len(fragment_payload > 0):
+                fragment_payload =  fragment_payload.payload      
             
             #payload.show()   
-            raw_payload = raw(payload)
-            first_byte = fragment_header.offset
-            last_byte = len(raw_payload)
-            if len(raw_payload) > 0:
-                if i == 0:
-                    final_packet = final_packet / payload
+            fragment_raw_payload = raw(fragment_payload)
+            first_byte_index = fragment_header.offset * 8
+            last_byte_index = len(fragment_raw_payload) + first_byte_index
+            #print(first_byte_index, last_byte_index)
+            if len(fragment_raw_payload) > 0:
+                #if i == 0:
+                #final_packet.show()
+                newPayload = None
+                finalPayload_len = 0 if final_packet.payload == None else len(raw(final_packet.payload))
+                if first_byte_index == finalPayload_len:
+                    final_packet = final_packet / conf.raw_layer(load=fragment_raw_payload)
+                    newPayload = final_packet.payload
                 else:
-                    final_packet.payload[first_byte:last_byte] = raw_payload # non è corretto
+                    currentPayload = raw(final_packet.payload)
+                    newPayload = currentPayload[:first_byte_index]
+                    newPayload = newPayload / fragment_payload
+                    if last_byte_index < len(raw(final_packet.payload)):
+                        newPayload = newPayload / currentPayload[last_byte_index:]
+                    
+                    #self.logs_handler.logger.debug("previous payload lenght: %d", len(raw(len(final_packet.payload))))
+                    final_packet.payload = newPayload
+                    #self.logs_handler.logger.debug("new payload lenght: %d", len(raw(len(newPayload))))
             i+=1
-            
-        return segments
+        
+        #final_packet.show()
+        return final_packet, protocol, upper_layer_header
     
     
     def fragmentation(self, packet):
@@ -103,7 +118,7 @@ class frammentizzatore:
     def overlapping_fragmentation(self, input_packet):
         
         packet = IPv6(input_packet.get_payload())
-        
+        packet.show()
         #self.logs_handler.logger.debug("/////////////////// original packet")
         #packet.show()
         
@@ -217,18 +232,41 @@ class frammentizzatore:
             
             j+=1
         
-        res = self.checksum_computation(basic_header, res)
         #for frag in res:
-        #    frag.show()  
-            
+        #    frag.show()
+        
+        original_packet, protocol, upper_layer_header = self.checksum_computation(basic_header, res)  
+        
+        #packet.show()
+        #upper_layer_header.show()
+        input_packet.set_payload(bytes(original_packet))
+        original_packet = IPv6(input_packet.get_payload())
+        if protocol == 58:
+            #upper_layer_header.cksum = 0
+            upper_layer_header.cksum = original_packet[ICMPv6EchoRequest].cksum
+            #upper_layer_header.show()
+        
+        if protocol == 6:
+            #upper_layer_header.chksum = 0
+            #upper_layer_header.show()
+            upper_layer_header.chksum = original_packet.chksum
+            #upper_layer_header.show()
+        
+        if protocol == 17:
+            #upper_layer_header.chksum = 0
+            #upper_layer_header.show()
+            upper_layer_header.chksum = original_packet.chksum
+            #upper_layer_header.show()
+        
         self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", len(res))
-        return res
+        
+        return original_packet
     
     
     def fragment(self, input_packet, fragment_size = 1280):
         
         packet = IPv6(input_packet.get_payload())
-        #packet.show()
+        packet.show()
         
         tmp = self.headerCheck(packet)
         if tmp == False:

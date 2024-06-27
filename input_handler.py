@@ -19,7 +19,11 @@ class inputHandler:
     
     def parse_input(self):
         
-        obj = load(self.file)
+        try:
+            obj = load(self.file)
+        except:
+            self.logs_handler.logger.error("json decoding error")
+            return False
         keys = obj.keys()
         
         # protocol check
