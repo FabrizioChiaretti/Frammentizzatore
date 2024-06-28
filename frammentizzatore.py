@@ -49,16 +49,18 @@ class frammentizzatore:
         final_packet = basic_header
         upper_layer_header = None
         protocol = None
+        j = 0
         for frag in segments:
             if TCP in frag:
-                upper_layer_header = frag[TCP]
+                upper_layer_header = j
                 protocol = 6
             if UDP in frag:
-                upper_layer_header = frag[UDP]
+                upper_layer_header = j
                 protocol = 17
             if ICMPv6EchoRequest in frag: 
-                upper_layer_header = frag[ICMPv6EchoRequest]
+                upper_layer_header = j
                 protocol = 58
+            j+=1
         
         if protocol == None:
             self.logs_handler.logger.error("Can not find upper layer protocol, can not compute upper layer checksum")
@@ -101,6 +103,7 @@ class frammentizzatore:
                     #self.logs_handler.logger.debug("new payload lenght: %d", len(raw(len(newPayload))))
             i+=1
         
+        final_packet.plen = len(raw(final_packet.payload))
         #final_packet.show()
         return final_packet, protocol, upper_layer_header
     
@@ -118,9 +121,8 @@ class frammentizzatore:
     def overlapping_fragmentation(self, input_packet):
         
         packet = IPv6(input_packet.get_payload())
-        packet.show()
-        #self.logs_handler.logger.debug("/////////////////// original packet")
         #packet.show()
+        #self.logs_handler.logger.debug("/////////////////// original packet")
         
         tmp = self.headerCheck(packet)
         if tmp == False:
@@ -239,28 +241,56 @@ class frammentizzatore:
         
         #packet.show()
         #upper_layer_header.show()
+        #original_packet.show()
         input_packet.set_payload(bytes(original_packet))
         original_packet = IPv6(input_packet.get_payload())
         if protocol == 58:
             #upper_layer_header.cksum = 0
-            upper_layer_header.cksum = original_packet[ICMPv6EchoRequest].cksum
-            #upper_layer_header.show()
-        
+            del original_packet[ICMPv6EchoRequest].cksum
+            input_packet.set_payload(bytes(original_packet))
+            original_packet = IPv6(input_packet.get_payload())
+            frag = res[upper_layer_header]
+            input_packet.set_payload(bytes(frag))
+            frag = IPv6(input_packet.get_payload())
+            del frag[ICMPv6EchoRequest].cksum
+            frag[ICMPv6EchoRequest].cksum = original_packet[ICMPv6EchoRequest].cksum
+            res[upper_layer_header] = frag
+            #res[upper_layer_header].show()
+            
         if protocol == 6:
-            #upper_layer_header.chksum = 0
-            #upper_layer_header.show()
-            upper_layer_header.chksum = original_packet.chksum
-            #upper_layer_header.show()
+            del original_packet[TCP].chksum
+            input_packet.set_payload(bytes(original_packet))
+            original_packet = IPv6(input_packet.get_payload())
+            frag = res[upper_layer_header]
+            input_packet.set_payload(bytes(frag))
+            frag = IPv6(input_packet.get_payload())
+            del frag[TCP].chksum
+            frag[TCP].chksum = original_packet[TCP].chksum
+            res[upper_layer_header] = frag
+            #res[upper_layer_header].show()
+            #frag.show()
         
         if protocol == 17:
-            #upper_layer_header.chksum = 0
-            #upper_layer_header.show()
-            upper_layer_header.chksum = original_packet.chksum
-            #upper_layer_header.show()
+            del original_packet[UDP].chksum
+            input_packet.set_payload(bytes(original_packet))
+            original_packet = IPv6(input_packet.get_payload())
+            frag = res[upper_layer_header]
+            input_packet.set_payload(bytes(frag))
+            frag = IPv6(input_packet.get_payload())
+            del frag[UDP].chksum
+            frag[UDP].chksum = original_packet[UDP].chksum
+            res[upper_layer_header] = frag
+            #res[upper_layer_header].show()
+            #frag.show()
         
         self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", len(res))
+        #original_packet.show()
+        #for frag in res:
+        #    input_packet.set_payload(bytes(frag))
+        #    frag = IPv6(input_packet.get_payload())
+        #    frag.show()
         
-        return original_packet
+        return res #[original_packet]
     
     
     def fragment(self, input_packet, fragment_size = 1280):

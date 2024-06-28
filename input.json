@@ -1,21 +1,27 @@
 {	
-	"protocol": "udp",
+	"protocol": "icmpv6",
 	
-	"dstPort": -1,
+	"dstPort": 80,
 
-	"ipv6Dest":"", 
+	"ipv6Dest":"2600::", 
 	
-	"type":"regular", 
+	"type":"overlapping", 
 	
 	"fragmentSize": 1000,
 
 	"fragments":[ 
 
-		{"PayloadLenght":-1, "HopLimit":-1, "FO":0, "M": 0,
+		{"PayloadLenght":200, "HopLimit":-1, "FO":0, "M": 1,
+		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+		{"Destination":{}}, {"Mobility":{}}]},
+
+		{"PayloadLenght":200, "HopLimit":-1, "FO":200, "M": 1,
+		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+		{"Destination":{}}, {"Mobility":{}}]},
+
+		{"PayloadLenght":-1, "HopLimit":-1, "FO":400, "M": 0,
 		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
 		{"Destination":{}}, {"Mobility":{}}]}
-
-		
 
 	]
 }
