@@ -19,7 +19,7 @@
 		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
 		{"Destination":{}}, {"Mobility":{}}]},
 
-		{"PayloadLenght":-1, "HopLimit":-1, "FO":400, "M": 0,
+		{"PayloadLenght":104, "HopLimit":-1, "FO":400, "M": 0,
 		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
 		{"Destination":{}}, {"Mobility":{}}]}
 

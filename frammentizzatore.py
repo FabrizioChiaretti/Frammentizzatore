@@ -42,11 +42,25 @@ class frammentizzatore:
                 if cur_offset < min_offset:
                     min_pos = 0
                     min_offset = cur_offset
+                    
             pkt = IPv6(tmp[min_pos])
-            segments.append(pkt)
+            fragment_header = pkt[IPv6ExtHdrFragment].copy()
+            new_pkt = fragment_header.copy()
+            del new_pkt[IPv6ExtHdrFragment].payload
+            nh = fragment_header.nh
+            fragment_payload = fragment_header.payload
+            while nh not in [59, 58, 6, 17] and len(fragment_payload > 0):
+                nh = fragment_payload.nh
+                fragment_payload =  fragment_payload.payload
+            
+            new_pkt = new_pkt / fragment_payload.copy()
+            segments.append(new_pkt)
+            #self.logs_handler.logger.info("////////////////////////////")
+            #new_pkt.show()
             del tmp[min_pos]
         
-        final_packet = basic_header
+        final_packets = []
+        final_packets.append(basic_header)
         upper_layer_header = None
         protocol = None
         j = 0
@@ -64,48 +78,53 @@ class frammentizzatore:
         
         if protocol == None:
             self.logs_handler.logger.error("Can not find upper layer protocol, can not compute upper layer checksum")
-            return segments
+            return fragments
         
         if upper_layer_header == None:
             self.logs_handler.logger.error("Can not find upper layer header, can not compute upper layer checksum")
-            return segments
+            return fragments
         
         i = 0
-        for fragment in segments:     
-            fragment_header = fragment[IPv6ExtHdrFragment]
-            nh = fragment[IPv6ExtHdrFragment].nh
+        for frag in segments:
+            #frag.show()
+            fragment_header = frag[IPv6ExtHdrFragment]
             fragment_payload = fragment_header.payload
-            while nh not in [59, 58, 6, 17] and len(fragment_payload > 0):
-                fragment_payload =  fragment_payload.payload      
-            
-            #payload.show()   
+            #fragment_payload.show()
             fragment_raw_payload = raw(fragment_payload)
             first_byte_index = fragment_header.offset * 8
-            last_byte_index = len(fragment_raw_payload) + first_byte_index
-            #print(first_byte_index, last_byte_index)
+            #last_byte_index = len(fragment_raw_payload) + first_byte_index
+            #self.logs_handler.logger.info("len = %d, offset = %d", pkt_len, first_byte_index)
             if len(fragment_raw_payload) > 0:
-                #if i == 0:
-                #final_packet.show()
-                newPayload = None
-                finalPayload_len = 0 if final_packet.payload == None else len(raw(final_packet.payload))
-                if first_byte_index == finalPayload_len:
-                    final_packet = final_packet / conf.raw_layer(load=fragment_raw_payload)
-                    newPayload = final_packet.payload
-                else:
-                    currentPayload = raw(final_packet.payload)
-                    newPayload = currentPayload[:first_byte_index]
-                    newPayload = newPayload / fragment_payload
-                    if last_byte_index < len(raw(final_packet.payload)):
-                        newPayload = newPayload / currentPayload[last_byte_index:]
-                    
-                    #self.logs_handler.logger.debug("previous payload lenght: %d", len(raw(len(final_packet.payload))))
-                    final_packet.payload = newPayload
-                    #self.logs_handler.logger.debug("new payload lenght: %d", len(raw(len(newPayload))))
+                j = 0
+                while j < len(final_packets):
+                    pkt = final_packets[j]
+                    final_payload_len = len(pkt.payload)
+                    #pkt.payload.show()
+                    if first_byte_index == final_payload_len:
+                        new_pkt = pkt.copy()
+                        new_pkt = new_pkt / conf.raw_layer(load=fragment_raw_payload)
+                        final_packets.append(new_pkt) 
+                        if i+1 < len(segments): 
+                            subsequent_fragment = segments[i+1] 
+                            subsequent_fragment_offset = subsequent_fragment[IPv6ExtHdrFragment].offset * 8
+                            if subsequent_fragment_offset != final_payload_len:
+                                final_packets.remove(pkt)
+                                j-=1
+                        else:
+                            final_packets.remove(pkt)
+                            j-=1
+                    j+=1
+                        
             i+=1
         
-        final_packet.plen = len(raw(final_packet.payload))
-        #final_packet.show()
-        return final_packet, protocol, upper_layer_header
+        final_packets[0].plen = len(raw(final_packets[0].payload))
+        #self.logs_handler.logger.info("len = %d", len(final_packets))
+        #for packet in final_packets:
+            #packet.plen = len(raw(packet.payload))
+            #packet.show()
+        
+        #return final_packets    
+        return final_packets[0], protocol, upper_layer_header
     
     
     def fragmentation(self, packet):
@@ -237,8 +256,10 @@ class frammentizzatore:
         #for frag in res:
         #    frag.show()
         
+        #orginal_packet = self.checksum_computation(basic_header, res)
         original_packet, protocol, upper_layer_header = self.checksum_computation(basic_header, res)  
-        
+        #out = self.checksum_computation(basic_header, res)  
+        #return original_packet
         #packet.show()
         #upper_layer_header.show()
         #original_packet.show()
