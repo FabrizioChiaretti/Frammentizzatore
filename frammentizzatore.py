@@ -1,4 +1,4 @@
-from scapy.all import IPv6, IPv6ExtHdrFragment, TCP, UDP, ICMPv6EchoRequest, raw, Packet
+from scapy.all import IPv6, IPv6ExtHdrFragment, IPv6ExtHdrDestOpt, IPv6ExtHdrHopByHop, IPv6ExtHdrRouting, PadN, TCP, UDP, ICMPv6EchoRequest, raw, Packet
 from random import getrandbits
 from scapy.config import conf
 
@@ -28,6 +28,20 @@ class frammentizzatore:
             return False
         
         return True
+    
+    
+    def fragmentation(self, packet):  
+        res = None
+        if "regular" in self.input_handler.type:
+            res = self.fragment(packet, self.input_handler.fragmentSize)
+            if "headerchain" in self.input_handler.type:
+                res = self.header_chain_processor(res)
+        if "overlapping" in self.input_handler.type:
+            res = self.overlapping_fragmentation(packet)
+            if "headerchain" in self.input_handler.type:
+                res = self.header_chain_processor(res)
+                
+        return res
     
     
     def payload_defragment(self, basic_header, Ext_header_chain_len, fragments):
@@ -128,16 +142,6 @@ class frammentizzatore:
         #return final_packets    
         #self.logs_handler.logger.info("protocol %d, upper layer %d", protocol, upper_layer_header)
         return final_packets, protocol, upper_layer_header
-    
-    
-    def fragmentation(self, packet):
-        
-        res = None
-        if self.input_handler.type == "regular":
-            res = self.fragment(packet, self.input_handler.fragmentSize)
-        elif self.input_handler.type == "overlapping":
-            res = self.overlapping_fragmentation(packet)
-        return res
     
     
     def overlapping_fragmentation(self, input_packet):
@@ -349,7 +353,7 @@ class frammentizzatore:
     def fragment(self, input_packet, fragment_size = 1280):
         
         packet = IPv6(input_packet.get_payload())
-        packet.show()
+        #packet.show()
         
         tmp = self.headerCheck(packet)
         if tmp == False:
@@ -461,6 +465,38 @@ class frammentizzatore:
             
         self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", len(res))
         return res
+
+
+    def _destination_header(self):
+        opt = "destination header"
+        opt_len = len(opt)
+        pad = PadN(otype=1, optlen=opt_len, optdata=opt)
+        header = IPv6ExtHdrDestOpt(autopad=1, options=pad)
+        header.len = len(raw(header))
+        #header.show()
+        return header
+
+
+    def _HopByHop_header(self):
+        opt = "hop by hop header"
+        opt_len = len(opt)
+        pad = PadN(otype=1, optlen=opt_len, optdata=opt)
+        header = IPv6ExtHdrHopByHop(autopad=1, options=pad)
+        header.len = len(raw(header))
+        #header.show()
+        return header
         
         
+    def _Routing_header(self):
+        header = IPv6ExtHdrRouting(len=(8 // 8 ) - 1 , type=0, segleft=0, addresses=[])   
+        header.len = len(raw(header))
+        #header.show()
+        return header
+    
+    
+    def header_chain_processor(self, fragments):
+        dest_header = self._destination_header()
+        hop_header = self._HopByHop_header()
+        routing_header = self._Routing_header()
           
+        return fragments

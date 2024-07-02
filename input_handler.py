@@ -48,7 +48,7 @@ class inputHandler:
             self.dstPort = obj["dstPort"]
         
         if self.dstPort < 0:
-            self.logs_handler.logger.warning("negative port will not be used")
+            self.logs_handler.logger.warning("dst port not specified")
         
         # ipv6Dest check
         if "ipv6Dest" not in keys:
@@ -68,7 +68,7 @@ class inputHandler:
             
         obj["type"] = str(obj["type"]).lower()
         if obj["type"] == "regular" or obj["type"] == "overlapping" or obj["type"] == "overlapping-headerchain" \
-            or obj["type"] == "headerchain" or obj["type"] == "regular-headerchain":
+            or obj["type"] == "regular-headerchain":
             self.type = obj["type"]
         else:
             self.logs_handler.logger.warning("type not specified")
@@ -92,7 +92,7 @@ class inputHandler:
             self.logs_handler.logger.error("fragments filed must be a list")
             return False
 
-        if "overlapping" in self.type:
+        if "overlapping" in self.type or "headerchain" in self.type:
             fragments = obj["fragments"]
             k = 1
             for frag in fragments:
@@ -133,6 +133,25 @@ class inputHandler:
             
             self.fragments = fragments
 
+        if "headerchain" in self.type:
+            k = 1
+            for frag in self.fragments:
+                frag_keys = frag.keys()
+                if "HeaderChain" not in frag_keys:
+                    self.logs_handler.logger.error("'HeaderChain' field misses in fragment %d ", k)
+                    return False
+                if type(frag["HeaderChain"]) != list:
+                    self.logs_handler.logger.error("'HeaderChain' field must be a list in fragment %d ", k)
+                    return False
+                headers = []
+                for header in frag["HeaderChain"]:
+                    key = list(header.keys())
+                    if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility"]:
+                        self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
+                        return False
+                    headers.append(key[0])
+                k += 1
+        
         if self.dstPort < 0:
             self.logs_handler.logger.info("protocol %s, dstPort %s, ipv6Dest %s, type %s, fragmentSize %d", \
             "any" if self.protocol == "" else self.protocol, "any", \
