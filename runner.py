@@ -7,7 +7,7 @@ from log import log
 from input_handler import inputHandler
 from frammentizzatore import frammentizzatore
 from scapy.all import send
-
+from time import sleep
 
 logs_handler = None
 input_handler = None

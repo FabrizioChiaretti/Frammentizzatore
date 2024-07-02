@@ -1,9 +1,9 @@
 {	
 	"protocol": "icmpv6",
 	
-	"dstPort": 80,
+	"dstPort": -1,
 
-	"ipv6Dest":"2600::", 
+	"ipv6Dest":"", 
 	
 	"type":"overlapping", 
 	
@@ -11,15 +11,27 @@
 
 	"fragments":[ 
 
-		{"PayloadLenght":200, "HopLimit":-1, "FO":0, "M": 1,
+		{"PayloadLenght":32, "HopLimit":-1, "FO":0, "M": 1,
 		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
 		{"Destination":{}}, {"Mobility":{}}]},
 
-		{"PayloadLenght":200, "HopLimit":-1, "FO":200, "M": 1,
+		{"PayloadLenght":32, "HopLimit":-1, "FO":8, "M": 1,
 		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
 		{"Destination":{}}, {"Mobility":{}}]},
 
-		{"PayloadLenght":104, "HopLimit":-1, "FO":400, "M": 0,
+		{"PayloadLenght":16, "HopLimit":-1, "FO":32, "M": 1,
+		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+		{"Destination":{}}, {"Mobility":{}}]},
+
+		{"PayloadLenght":24, "HopLimit":-1, "FO":48, "M": 1,
+		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+		{"Destination":{}}, {"Mobility":{}}]},
+
+		{"PayloadLenght":24, "HopLimit":-1, "FO":48, "M": 1,
+		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
+		{"Destination":{}}, {"Mobility":{}}]},
+
+		{"PayloadLenght":-1, "HopLimit":-1, "FO":72, "M": 0,
 		"HeaderChain":[{"HopByHop":{}}, {"Destination":{}}, {"Routing":{}}, {"Fragment":{}}, {"AH":{}}, {"ESP":{}}, 
 		{"Destination":{}}, {"Mobility":{}}]}
 
