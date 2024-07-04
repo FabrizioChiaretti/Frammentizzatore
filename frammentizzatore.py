@@ -543,10 +543,10 @@ class frammentizzatore:
         #if header == 135:
         #    res = 135 
         
-        if header == 58:
-            if ICMPv6EchoRequest in packet:
-                res = packet[ICMPv6EchoRequest].copy()
-                del res.data
+        #if header == 58:
+        #    if ICMPv6EchoRequest in packet:
+        #        res = packet[ICMPv6EchoRequest].copy()
+        #        del res.data
                 
         if header == 6:
             if TCP in packet:
@@ -615,8 +615,9 @@ class frammentizzatore:
                     new_header.nh = headerchain[j+1]
                 if j == len(headerchain)-1 and (header not in [58, 6, 17]):
                     new_header.nh = 59
-                     
-                new_fragment = new_fragment / new_header
+
+                if new_header != None:
+                    new_fragment = new_fragment / new_header
                 j += 1
             
             if payload != None:

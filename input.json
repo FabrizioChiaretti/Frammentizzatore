@@ -15,7 +15,7 @@
 		"HeaderChain":[{"HopByHop":{}}, {"Fragment":{}}, {"ICMPv6":{}}]},
 
 		{"PayloadLenght":-1, "HopLimit":-1, "FO":200, "M": 0,
-		"HeaderChain":[{"HopByHop":{}}, {"Fragment":{}}]}
+		"HeaderChain":[{"Fragment":{}}]}
 
 	]
 }
