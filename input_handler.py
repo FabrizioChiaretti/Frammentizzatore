@@ -35,6 +35,14 @@ class inputHandler:
             res = 50
         if name == "mobility":
             res = 135
+        if name == "icmpv6":
+            res = 58
+        if name == "tcp":
+            res = 6
+        if name == "udp":
+            res = 17
+        if name == "nonextheader":
+            res = 59
         
         return res
    
@@ -168,7 +176,7 @@ class inputHandler:
                 headers = []
                 for header in frag["HeaderChain"]:
                     key = list(header.keys())
-                    if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility"]:
+                    if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility", "icmpv6", "tcp", "udp"]:
                         self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
                         return False
                     header_value = self.header_value(key[0].lower())
