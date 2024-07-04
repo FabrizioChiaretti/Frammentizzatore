@@ -15,7 +15,29 @@ class inputHandler:
         self.type = "regular" 
         self.fragmentSize = 1280
         self.fragments = None
+        self.headerchain = []
+
+
+    def header_value(self, name):
+        res = ""
         
+        if name == "hopbyhop":
+            res = 0
+        if name == "destination":
+            res = 60
+        if name == "routing":
+            res = 43
+        if name == "fragment":
+            res = 44
+        if name == "ah":
+            res = 51
+        if name == "esp":
+            res = 50
+        if name == "mobility":
+            res = 135
+        
+        return res
+   
     
     def parse_input(self):
         
@@ -149,8 +171,12 @@ class inputHandler:
                     if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility"]:
                         self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
                         return False
-                    headers.append(key[0])
+                    header_value = self.header_value(key[0].lower())
+                    headers.append(header_value)
+                self.headerchain.append(headers)
                 k += 1
+        #print("//////////////////")
+        #print(self.headerchain)
         
         if self.dstPort < 0:
             self.logs_handler.logger.info("protocol %s, dstPort %s, ipv6Dest %s, type %s, fragmentSize %d", \

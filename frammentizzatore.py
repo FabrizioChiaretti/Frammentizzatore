@@ -5,10 +5,9 @@ from scapy.config import conf
 
 class frammentizzatore:
     
-    def __init__(self, logs_handler, input_handler, max_fragment_lenght = 1280, min_payload_lenght = 8):
+    def __init__(self, logs_handler, input_handler, max_fragment_lenght = 1280):
         
         self.max_fragment_lenght = max_fragment_lenght
-        self.min_payload_lenght = min_payload_lenght
         self.logs_handler = logs_handler  
         self.input_handler = input_handler       
     
@@ -276,12 +275,16 @@ class frammentizzatore:
             while i < len(original_packets):    
                 input_packet.set_payload(bytes(original_packets[i]))
                 original_packets[i] = IPv6(input_packet.get_payload())
+                original_packets[i][ICMPv6EchoRequest].id = 2
+                original_packets[i][ICMPv6EchoRequest].seq = 2
                 del original_packets[i][ICMPv6EchoRequest].cksum
                 input_packet.set_payload(bytes(original_packets[i]))
                 original_packets[i] = IPv6(input_packet.get_payload())
                 frag = res[upper_layer_header]
                 input_packet.set_payload(bytes(frag))
                 frag = IPv6(input_packet.get_payload())
+                frag[ICMPv6EchoRequest].id = 2
+                frag[ICMPv6EchoRequest].seq = 2
                 del frag[ICMPv6EchoRequest].cksum
                 frag[ICMPv6EchoRequest].cksum = original_packets[i][ICMPv6EchoRequest].cksum
                 res[upper_layer_header] = frag
@@ -294,6 +297,7 @@ class frammentizzatore:
                     j += 1
                 final_segments = final_segments + res.copy()
                 i+=1
+            final_segments[0].show()
             
         if protocol == 6:
             i = 0
@@ -467,12 +471,33 @@ class frammentizzatore:
         return res
 
 
+    def _extension_header_builder(self, header):
+        res = None
+        
+        if header == 0:
+            res = self._HopByHop_header()
+        if header == 60:
+            res = self._destination_header()
+        if header == 43:
+            res = self._Routing_header()
+        
+        #if header == 44:
+        #    res = None
+        #if header == 51:
+        #    res = 51
+        #if header == 50:
+        #    res = 50
+        #if header == 135:
+        #    res = 135 
+
+        return res
+
     def _destination_header(self):
         opt = "destination header"
         opt_len = len(opt)
         pad = PadN(otype=1, optlen=opt_len, optdata=opt)
-        header = IPv6ExtHdrDestOpt(autopad=1, options=pad)
-        header.len = len(raw(header))
+        header = IPv6ExtHdrDestOpt(len=(2 + opt_len + 7) // 8 - 1, autopad=1, options=pad) # len=(2 + opt_len + 7) // 8 - 1
+        #self.logs_handler.logger.info("destnation len %d", len(raw(header)))
         #header.show()
         return header
 
@@ -480,23 +505,59 @@ class frammentizzatore:
     def _HopByHop_header(self):
         opt = "hop by hop header"
         opt_len = len(opt)
-        pad = PadN(otype=1, optlen=opt_len, optdata=opt)
-        header = IPv6ExtHdrHopByHop(autopad=1, options=pad)
-        header.len = len(raw(header))
+        pad = PadN(otype=1, optlen=opt_len, optdata=opt) 
+        header = IPv6ExtHdrHopByHop(len=(2 + opt_len + 7) // 8 - 1, autopad=1, options=pad) # len=(2 + opt_len + 7) // 8 - 1
+        #self.logs_handler.logger.info("hop by hop len %d", len(raw(header)))
         #header.show()
         return header
         
         
     def _Routing_header(self):
         header = IPv6ExtHdrRouting(len=(8 // 8 ) - 1 , type=0, segleft=0, addresses=[])   
-        header.len = len(raw(header))
+        #self.logs_handler.logger.info("routing len %d", len(raw(header)))
         #header.show()
         return header
     
     
-    def header_chain_processor(self, fragments):
-        dest_header = self._destination_header()
-        hop_header = self._HopByHop_header()
-        routing_header = self._Routing_header()
+    def header_chain_processor(self, input_fragments):
+        
+        fragments_headerchain = self.input_handler.headerchain
+        if len(fragments_headerchain) != len(input_fragments):
+            self.logs_handler.logger.warning("Can not find all the header chain of the fragments")
+            return input_fragments
+        
+        i = 0
+        fragments = input_fragments.copy()
+        while i < len(fragments_headerchain):
+            headerchain = fragments_headerchain[i]
+            if len(headerchain) > 0 and 44 not in headerchain:
+                self.logs_handler.logger.error("Fragment header not found in the header chain of fragment %d", i+1)
+                return fragments
+            fragment = fragments[i]
+            fragPart = fragment[IPv6ExtHdrFragment].payload # extension headers after fragment header
+            fragPart_len = len(raw(fragment[IPv6ExtHdrFragment].payload))
+            FragHeaderLen = len(raw(fragment[IPv6ExtHdrFragment]))
+            UnfragPartLen = len(raw(fragment)) - fragPart_len - FragHeaderLen 
+            unfragPart = fragment.copy()
+            del unfragPart[IPv6ExtHdrFragment].underlayer.payload # extension headers before fragment header
+            #fragPart.show()
+            #unfragPart.show()
+            
+            
+            new_unfragPart = fragment.copy()
+            new_unfragPart.remove_payload()
+            #new_unfragPart.show()
+            j = 0
+            for header in headerchain:
+                if new_unfragPart[j].nh != header:
+                    #self.logs_handler.logger.error("/////// %d", new_unfragPart[j].nh)
+                    ext_header = self._extension_header_builder(header)   
+            
+            i += 1
+        
+        
+        #dest_header = self._destination_header()
+        #hop_header = self._HopByHop_header()
+        #routing_header = self._Routing_header()
           
-        return fragments
+        return input_fragments

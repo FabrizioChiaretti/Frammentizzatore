@@ -6,7 +6,7 @@ from FirewallHandler import FirewallHandler
 from log import log
 from input_handler import inputHandler
 from frammentizzatore import frammentizzatore
-from scapy.all import send
+from scapy.all import send, sr, sr1
 from time import sleep
 
 logs_handler = None
@@ -15,7 +15,8 @@ input_handler = None
 def sendFragments(fragments):
     num_of_fragments = len(fragments)
     logs_handler.logger.info("Sending %d fragments", num_of_fragments)
-    send(fragments)
+    for i in range (0,1000):
+        send(fragments)
     logs_handler.logger.info("Fragments sent")
 
 def traffic_handler(packet):
