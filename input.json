@@ -12,10 +12,10 @@
 	"fragments":[ 
 
 		{"PayloadLenght":200, "HopLimit":-1, "FO":0, "M": 1,
-		"HeaderChain":[{"HopByHop":{}}, {"Fragment":{}}, {"ICMPv6":{}}]},
+		"HeaderChain":[{"fragment":{}}, {"mobility":{}}]},
 
 		{"PayloadLenght":-1, "HopLimit":-1, "FO":200, "M": 0,
-		"HeaderChain":[{"Fragment":{}}]}
+		"HeaderChain":[{"fragment":{}}]}
 
 	]
 }

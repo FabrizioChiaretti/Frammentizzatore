@@ -1,6 +1,7 @@
-from scapy.all import IPv6, IPv6ExtHdrFragment, IPv6ExtHdrDestOpt, IPv6ExtHdrHopByHop, IPv6ExtHdrRouting, PadN, TCP, UDP, ICMPv6EchoRequest, raw, Packet
+from scapy.all import fuzz, IPv6, IPv6ExtHdrFragment, IPv6ExtHdrDestOpt, IPv6ExtHdrHopByHop, IPv6ExtHdrRouting, AH, ESP, MIP6MH_Generic, PadN, TCP, UDP, ICMPv6EchoRequest, raw, Packet
 from random import getrandbits
 from scapy.config import conf
+from random import randint
 
 
 class frammentizzatore:
@@ -505,7 +506,26 @@ class frammentizzatore:
         #self.logs_handler.logger.info("routing len %d", len(raw(header)))
         #header.show()
         return header
-        
+
+
+    def _ah_header(self):
+        icv = ""
+        #header = fuzz(AH(payloadlen=((12 + len(icv)) // 4 - 2), reserved = 0))
+        header = AH(payloadlen=((12 + len(icv)) // 4 - 2), spi=1, seq = randint(0, 100000), icv=icv, padding=(len(icv) * 4) % 32, reserved=0) #payloadlen=((12 + len(icv)) // 4 - 2),
+        #header.payloadlen = len(raw(header)) // 4 - 2
+        return header  
+    
+    
+    def _esp_header(self):
+        header = ESP(spi=1, seq=0, data=b"")
+        #header.show()
+        return header
+    
+    
+    def _mobility_header(self):
+        header = fuzz(MIP6MH_Generic())
+        return header
+    
     
     def _extension_header_builder(self, packet, header):
         res = None
@@ -536,17 +556,22 @@ class frammentizzatore:
                 res = packet[IPv6ExtHdrFragment].copy()
                 del res.payload
                 
-        #if header == 51:
-        #    res = 51
-        #if header == 50:
-        #    res = 50
-        #if header == 135:
-        #    res = 135 
-        
-        #if header == 58:
-        #    if ICMPv6EchoRequest in packet:
-        #        res = packet[ICMPv6EchoRequest].copy()
-        #        del res.data
+        if header == 51:
+            if AH in packet:
+                res = packet[AH]
+                del res.payload
+            else:
+                res = self._ah_header()
+                
+        if header == 50:
+            if ESP in packet:
+                res = packet[ESP]
+                del res.payload
+            else:
+                res = self._esp_header()
+                
+        if header == 135:
+            res = self._mobility_header()
                 
         if header == 6:
             if TCP in packet:
@@ -581,29 +606,35 @@ class frammentizzatore:
             
             new_fragment = fragment.copy()
             new_fragment.remove_payload() # new_fragment = basic header of the current fragment
-            new_fragment.nh = 59
+            #new_fragment.nh = 59
             #new_fragment.show()
             payload = fragment.copy() # payload of the current fragment
             k = 0
-            while (int(payload.nh) not in [59, 6, 17, 58]): # no next header, udp, UDP, icmpv6
+            while (payload.nh not in [59, 6, 17, 58]): # no next header, udp, UDP, icmpv6
                 #payload.show()
                 payload = payload.payload
                 k+=1
             
-            #self.logs_handler.logger.error("////////////// FRAGMENT %d", i+1)
-            #payload.show()
-            
-            if int(payload.nh) == 6: # tcp
+            last_header = None
+            if payload.nh == 6: # tcp
                 payload = payload[TCP].payload
+                last_header = 6
         
-            elif int(payload.nh) == 17: # udp
+            elif payload.nh == 17: # udp
                 payload = payload[TCP].payload
+                last_header = 17
         
-            elif int(payload.nh) == 58: # icmpv6
+            elif payload.nh == 58: # icmpv6
                 payload = payload[ICMPv6EchoRequest]
+                last_header = 58
             
-            elif int(payload.nh) == 59: # no next header
+            elif payload.nh == 59: # no next header
                 payload = payload.payload
+                last_header = 59
+                
+            if len(headerchain) == 0:
+                frag_header = self._extension_header_builder(fragment, 44)
+                new_fragment = new_fragment / frag_header    
                 
             j = 0
             while j < len(headerchain):
@@ -614,7 +645,7 @@ class frammentizzatore:
                 if header not in [58, 6, 17] and j+1 < len(headerchain):
                     new_header.nh = headerchain[j+1]
                 if j == len(headerchain)-1 and (header not in [58, 6, 17]):
-                    new_header.nh = 59
+                    new_header.nh = last_header
 
                 if new_header != None:
                     new_fragment = new_fragment / new_header
@@ -627,5 +658,6 @@ class frammentizzatore:
             new_fragments.append(new_fragment)
             
             i += 1
-            
+        
+        self.logs_handler.logger.info("header chain of the fragments processed, returning %d fragments", len(new_fragments))
         return new_fragments
