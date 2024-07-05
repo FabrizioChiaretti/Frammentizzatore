@@ -1,4 +1,4 @@
-from scapy.all import fuzz, IPv6, IPv6ExtHdrFragment, IPv6ExtHdrDestOpt, IPv6ExtHdrHopByHop, IPv6ExtHdrRouting, AH, ESP, MIP6MH_Generic, PadN, TCP, UDP, ICMPv6EchoRequest, raw, Packet
+from scapy.all import fuzz, IPv6, IPv6ExtHdrFragment, IPv6ExtHdrDestOpt, IPv6ExtHdrHopByHop, IPv6ExtHdrRouting, AH, ESP, MIP6MH_Generic, MIP6MH_BRR, PadN, TCP, UDP, ICMPv6EchoRequest, raw, Packet, in6_chksum
 from random import getrandbits
 from scapy.config import conf
 from random import randint
@@ -43,7 +43,9 @@ class frammentizzatore:
         
         k = 0
         while k < len(res):
+            #packet.set_payload(bytes(res[k]))
             self.logs_handler.logger.info("///////////////// FRAGMENT %d", k+1)
+            #res[k] = IPv6(packet.get_payload())
             res[k].show()
             k += 1
             
@@ -523,7 +525,7 @@ class frammentizzatore:
     
     
     def _mobility_header(self):
-        header = fuzz(MIP6MH_Generic())
+        header = MIP6MH_Generic(cksum = 0, res=0, len=0, msg="", mhtype=90)
         return header
     
     
@@ -604,8 +606,9 @@ class frammentizzatore:
             #fragPart.show()
             #unfragPart.show()
             
-            new_fragment = fragment.copy()
-            new_fragment.remove_payload() # new_fragment = basic header of the current fragment
+            basic_header = fragment.copy()
+            basic_header.remove_payload() # new_fragment = basic header of the current fragment
+            new_fragment = basic_header
             #new_fragment.nh = 59
             #new_fragment.show()
             payload = fragment.copy() # payload of the current fragment
@@ -655,6 +658,14 @@ class frammentizzatore:
                 new_fragment = new_fragment / payload
                 
             new_fragment.plen = len(raw(new_fragment.payload))
+            if MIP6MH_Generic in new_fragment:
+                aux = new_fragment[MIP6MH_Generic].copy()
+                del aux.payload
+                #aux.show()
+                csum = in6_chksum(135, basic_header, raw(aux))
+                new_fragment[MIP6MH_Generic].cksum = csum
+                #new_fragment[MIP6MH_Generic].show()
+            
             new_fragments.append(new_fragment)
             
             i += 1
