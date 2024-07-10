@@ -11,6 +11,7 @@ from time import sleep
 
 logs_handler = None
 input_handler = None
+frammentatore = None
 
 def sendFragments(fragments):
     num_of_fragments = len(fragments)
@@ -22,8 +23,7 @@ def sendFragments(fragments):
 def traffic_handler(packet):
     
     logs_handler.logger.info("Traffic intercepted")
-    framm = frammentizzatore(logs_handler, input_handler)
-    fragments = framm.fragmentation(packet)
+    fragments = frammentatore.fragmentation(packet)
     
     if fragments == None:
         logs_handler.logger.warning("Original packets released")
@@ -67,6 +67,9 @@ def main():
     res = input_handler.parse_input()
     if res == False:
         exit(1)
+    
+    global frammentatore
+    frammentatore = frammentizzatore(logs_handler, input_handler)
     
     firewall_handler = setFirewallRules(logs_handler, input_handler.protocol, input_handler.ipv6Dest, input_handler.dstPort)
     logs_handler.logger.info("Firewall rules set")

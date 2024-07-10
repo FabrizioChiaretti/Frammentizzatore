@@ -7,13 +7,18 @@
 	
 	"type":"overlapping-HeaderChain", 
 	
-	"fragmentSize": 1000,
+	"fragmentSize": 200,
 
 	"fragments":[ 
 
-		{"PayloadLenght":-1, "HopLimit":-1, "FO":0, "M": 0,
-		"HeaderChain":[{"fragment":{}}, {"mobility":{}}]}
-
+		{"PayloadLenght":200, "HopLimit":-1, "FO":0, "M": 1,
+		"HeaderChain":[{"routing":{}}, {"fragment":{}}, {"destination":{}}]},
+		{"PayloadLenght":200, "HopLimit":-1, "FO":200, "M": 1,
+		"HeaderChain":[{"fragment":{}}]},
+		{"PayloadLenght":200, "HopLimit":-1, "FO":400, "M": 1,
+		"HeaderChain":[{"fragment":{}}]},
+		{"PayloadLenght":4, "HopLimit":-1, "FO":600, "M": 0,
+		"HeaderChain":[{"fragment":{}}]}
 	]
 }
 
