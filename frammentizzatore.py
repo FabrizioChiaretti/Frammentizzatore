@@ -309,7 +309,7 @@ class frammentizzatore:
             return None
         
         final_segments = []
-        if protocol == 58:
+        if protocol == 58: # ICMPv6
             i = 0
             while i < len(original_packets): 
                 input_packet.set_payload(bytes(original_packets[i]))
@@ -343,52 +343,66 @@ class frammentizzatore:
             #for frag in final_segments:
                 #frag.show()
             
-        if protocol == 6:
+        if protocol == 6: # TCP
             i = 0
-            while i < len(original_packets):    
+            while i < len(original_packets): 
                 input_packet.set_payload(bytes(original_packets[i]))
                 original_packets[i] = IPv6(input_packet.get_payload())
-                del original_packets[i][TCP].chksum
-                input_packet.set_payload(bytes(original_packets[i]))
-                original_packets[i] = IPv6(input_packet.get_payload())
-                frag = res[upper_layer_header]
-                input_packet.set_payload(bytes(frag))
-                frag = IPv6(input_packet.get_payload())
-                del frag[TCP].chksum
-                frag[TCP].chksum = original_packets[i][TCP].chksum
-                res[upper_layer_header] = frag
-                j = 0
-                packet_id = getrandbits(32)
-                while j < len(res):
-                    input_packet.set_payload(bytes(res[j]))
-                    res[j] = IPv6(input_packet.get_payload())
-                    res[j][IPv6ExtHdrFragment].id = packet_id
-                    j += 1
-                final_segments = final_segments + res.copy()
+                #original_packets[i].show()
+                if TCP in original_packets[i]:
+                    #original_packets[i][TCP].id = 0xffff
+                    #original_packets[i][TCP].seq = 0xffff
+                    del original_packets[i][TCP].chksum
+                    input_packet.set_payload(bytes(original_packets[i]))
+                    original_packets[i] = IPv6(input_packet.get_payload())
+                    frag = res[upper_layer_header]
+                    input_packet.set_payload(bytes(frag))
+                    frag = IPv6(input_packet.get_payload())
+                    #frag[TCP].id = 0xffff
+                    #frag[TCP].seq = 0xffff
+                    del frag[TCP].chksum
+                    frag[TCP].chksum = original_packets[i][TCP].chksum
+                    res[upper_layer_header] = frag
+                    j = 0
+                    packet_id = getrandbits(32)
+                    while j < len(res):
+                        input_packet.set_payload(bytes(res[j]))
+                        res[j] = IPv6(input_packet.get_payload())
+                        res[j][IPv6ExtHdrFragment].id = packet_id
+                        j += 1
+                    segments = res.copy()
+                    final_segments.append(segments)
                 i+=1
         
-        if protocol == 17:
+        if protocol == 17: # UDP
             i = 0
-            while i < len(original_packets):    
+            while i < len(original_packets): 
                 input_packet.set_payload(bytes(original_packets[i]))
                 original_packets[i] = IPv6(input_packet.get_payload())
-                del original_packets[i][UDP].chksum
-                input_packet.set_payload(bytes(original_packets[i]))
-                original_packets[i] = IPv6(input_packet.get_payload())
-                frag = res[upper_layer_header]
-                input_packet.set_payload(bytes(frag))
-                frag = IPv6(input_packet.get_payload())
-                del frag[UDP].chksum
-                frag[UDP].chksum = original_packets[i][UDP].chksum
-                res[upper_layer_header] = frag
-                j = 0
-                packet_id = getrandbits(32)
-                while j < len(res):
-                    input_packet.set_payload(bytes(res[j]))
-                    res[j] = IPv6(input_packet.get_payload())
-                    res[j][IPv6ExtHdrFragment].id = packet_id
-                    j += 1
-                final_segments = final_segments + res.copy()
+                #original_packets[i].show()
+                if UDP in original_packets[i]:
+                    #original_packets[i][UDP].id = 0xffff
+                    #original_packets[i][UDP].seq = 0xffff
+                    del original_packets[i][UDP].chksum
+                    input_packet.set_payload(bytes(original_packets[i]))
+                    original_packets[i] = IPv6(input_packet.get_payload())
+                    frag = res[upper_layer_header]
+                    input_packet.set_payload(bytes(frag))
+                    frag = IPv6(input_packet.get_payload())
+                    #frag[UDP].id = 0xffff
+                    #frag[UDP].seq = 0xffff
+                    del frag[UDP].chksum
+                    frag[UDP].chksum = original_packets[i][UDP].chksum
+                    res[upper_layer_header] = frag
+                    j = 0
+                    packet_id = getrandbits(32)
+                    while j < len(res):
+                        input_packet.set_payload(bytes(res[j]))
+                        res[j] = IPv6(input_packet.get_payload())
+                        res[j][IPv6ExtHdrFragment].id = packet_id
+                        j += 1
+                    segments = res.copy()
+                    final_segments.append(segments)
                 i+=1
         
         lenght = 0

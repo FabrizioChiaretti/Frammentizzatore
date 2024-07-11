@@ -1,24 +1,18 @@
 {	
-	"protocol": "icmpv6",
+	"protocol": "tcp",
 	
-	"dstPort": -1,
+	"dstPort": 80,
 
 	"ipv6Dest":"", 
 	
-	"type":"regular-HeaderChain", 
+	"type":"overlapping-HeaderChain", 
 	
 	"fragmentSize": 400,
 
 	"fragments":[ 
 
-		{"PayloadLenght":8, "HopLimit":-1, "FO":0, "M": 1,
-		"HeaderChain":[{"hopbyhop":{}},{"routing":{}},{"fragment":{}},{"destination":{}}]},
-
-		{"PayloadLenght":200, "HopLimit":-1, "FO":8, "M": 1,
-		"HeaderChain":[{"routing":{}}, {"destination":{}}, {"fragment":{}}]},
-
-		{"PayloadLenght":-1, "HopLimit":-1, "FO":208, "M": 0,
-		"HeaderChain":[{"routing":{}}, {"fragment":{}}]}
+		{"PayloadLenght":-1, "HopLimit":-1, "FO":0, "M": 0,
+		"HeaderChain":[{"hopbyhop":{}}, {"destination":{}},{"routing":{}}, {"fragment":{}}, {"destination":{}}]}
 
 	]
 }
