@@ -5,17 +5,20 @@
 
 	"ipv6Dest":"", 
 	
-	"type":"overlapping-HeaderChain", 
+	"type":"regular-HeaderChain", 
 	
-	"fragmentSize": 200,
+	"fragmentSize": 400,
 
 	"fragments":[ 
 
-		{"PayloadLenght":200, "HopLimit":-1, "FO":0, "M": 1,
-		"HeaderChain":[{"fragment":{}}, {"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}}, {"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}}]},
+		{"PayloadLenght":8, "HopLimit":-1, "FO":0, "M": 1,
+		"HeaderChain":[{"hopbyhop":{}},{"routing":{}},{"fragment":{}},{"destination":{}}]},
 
-		{"PayloadLenght":-1, "HopLimit":-1, "FO":200, "M": 0,
-		"HeaderChain":[{"routing":{}},{"routing":{}}, {"fragment":{}}]}
+		{"PayloadLenght":200, "HopLimit":-1, "FO":8, "M": 1,
+		"HeaderChain":[{"routing":{}}, {"destination":{}}, {"fragment":{}}]},
+
+		{"PayloadLenght":-1, "HopLimit":-1, "FO":208, "M": 0,
+		"HeaderChain":[{"routing":{}}, {"fragment":{}}]}
 
 	]
 }

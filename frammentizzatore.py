@@ -37,13 +37,17 @@ class frammentizzatore:
         res = None
         if "regular" in self.input_handler.type:
             res = self.fragment(packet, self.input_handler.fragmentSize)
+            i = 0
+            while i < len(res):
+                packet.set_payload(bytes(res[i]))
+                res[i] = IPv6(packet.get_payload())
+                i += 1
+            new_res = []
+            new_res.append(res)
+            res = new_res
             if "headerchain" in self.input_handler.type:
-                i = 0
-                while i < len(res):
-                    packet.set_payload(bytes(res[i]))
-                    res[i] = IPv6(packet.get_payload())
-                    i += 1
                 res = self.header_chain_processor(res)
+                
         if "overlapping" in self.input_handler.type:
             res = self.overlapping_fragmentation(packet)
             if "headerchain" in self.input_handler.type:
@@ -52,10 +56,13 @@ class frammentizzatore:
         if res != None:
             k = 0
             while k < len(res):
+                i = 0
+                while i < len(res[k]):
                 #packet.set_payload(bytes(res[k]))
-                self.logs_handler.logger.info("///////////////// FRAGMENT %d", k+1)
-                #res[k] = IPv6(packet.get_payload())
-                res[k].show()
+                    self.logs_handler.logger.info("///////////////// FRAGMENT %d", i+1)
+                    #res[k] = IPv6(packet.get_payload())
+                    res[k][i].show()
+                    i+=1
                 k += 1
             
         return res
@@ -329,7 +336,8 @@ class frammentizzatore:
                         res[j] = IPv6(input_packet.get_payload())
                         res[j][IPv6ExtHdrFragment].id = packet_id
                         j += 1
-                    final_segments = final_segments + res.copy()
+                    segments = res.copy()
+                    final_segments.append(segments)
                 i+=1
             
             #for frag in final_segments:
@@ -383,11 +391,14 @@ class frammentizzatore:
                 final_segments = final_segments + res.copy()
                 i+=1
         
-        self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", len(final_segments))
+        lenght = 0
+        if len(final_segments) > 0:
+            lenght = len(final_segments)*len(final_segments[0])
+        self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", lenght)
         #original_packet.show()
         #for frag in final_segments:
         #    frag.show()
-        return final_segments 
+        return final_segments if len(final_segments) > 0 else res
     
     
     def fragment(self, input_packet, fragment_size = 1280):
@@ -631,105 +642,111 @@ class frammentizzatore:
             return input_fragments
             
         fragments_headerchain = self.input_handler.headerchain
-        if len(fragments_headerchain) != len(input_fragments):
-            self.logs_handler.logger.error("Can not find all the header chain of the fragments")
-            return input_fragments
-        
-        i = 0
-        new_fragments = []
-        new_fragment_offset = 0
-        while i < len(fragments_headerchain):
-            headerchain = fragments_headerchain[i]
-            if len(headerchain) > 0 and 44 not in headerchain:
-                self.logs_handler.logger.error("Fragment header not found in the header chain of fragment %d", i+1)
+        n = 0
+        new_res = []
+        while n < len(input_fragments):
+            if len(fragments_headerchain) != len(input_fragments[n]):
+                self.logs_handler.logger.error("Can not find the header chain of all the fragments")
                 return input_fragments
-            fragment = input_fragments[i]
-            #fragPart.show()
-            #unfragPart.show()
-            
-            basic_header = fragment.copy()
-            basic_header.remove_payload() # new_fragment = basic header of the current fragment
-            new_fragment = basic_header
-            #new_fragment.nh = 59
-            #new_fragment.show()
-            payload = fragment.copy() # payload of the current fragment
-            k = 0
-            while (payload.nh not in [59, 6, 17, 58]): # no next header, udp, UDP, icmpv6
-                #payload.show()
-                payload = payload.payload
-                k+=1
-            
-            last_header = None
-            if payload.nh == 6: # tcpù
-                payload = payload[TCP]
-                last_header = 6
         
-            elif payload.nh == 17: # udp
-                payload = payload[UDP]
-                last_header = 17
-        
-            elif payload.nh == 58: # icmpv6
-                payload = payload[ICMPv6EchoRequest]
-                last_header = 58
+            i = 0
+            new_fragments = []
+            new_fragment_offset = 0
+            while i < len(fragments_headerchain):
+                headerchain = fragments_headerchain[i]
+                if len(headerchain) > 0 and 44 not in headerchain:
+                    self.logs_handler.logger.error("Fragment header not found in the header chain of fragment %d", i+1)
+                    return input_fragments
+                fragment = input_fragments[n][i]
+                #fragment.show()
+                #fragPart.show()
+                #unfragPart.show()
             
-            elif payload.nh == 59: # no next header
-                payload = payload.payload
-                last_header = 59
+                basic_header = fragment.copy()
+                basic_header.remove_payload() # new_fragment = basic header of the current fragment
+                new_fragment = basic_header
+                #new_fragment.nh = 59
+                #new_fragment.show()
+                payload = fragment.copy() # payload of the current fragment
+                k = 0
+                while (payload.nh not in [59, 6, 17, 58]): # no next header, udp, UDP, icmpv6
+                    #payload.show()
+                    payload = payload.payload
+                    k+=1
+            
+                last_header = None
+                if payload.nh == 6: # tcpù
+                    payload = payload[TCP]
+                    last_header = 6
+        
+                elif payload.nh == 17: # udp
+                    payload = payload[UDP]
+                    last_header = 17
+        
+                elif payload.nh == 58: # icmpv6
+                    payload = payload[ICMPv6EchoRequest]
+                    last_header = 58
+            
+                elif payload.nh == 59: # no next header
+                    payload = payload.payload
+                    last_header = 59
                 
-            if len(headerchain) == 0:
-                frag_header = self._extension_header_builder(fragment, 44)
-                new_fragment = new_fragment / frag_header    
+                if len(headerchain) == 0:
+                    frag_header = self._extension_header_builder(fragment, 44)
+                    new_fragment = new_fragment / frag_header    
                 
-            j = 0
-            while j < len(headerchain):
-                header = headerchain[j]
-                if j == 0:
-                    new_fragment.nh = header
-                new_header = self._extension_header_builder(fragment, header)
-                if header not in [58, 6, 17] and j+1 < len(headerchain):
-                    new_header.nh = headerchain[j+1]
-                if j == len(headerchain)-1 and (header not in [58, 6, 17]):
-                    new_header.nh = last_header
+                j = 0
+                while j < len(headerchain):
+                    header = headerchain[j]
+                    if j == 0:
+                        new_fragment.nh = header
+                    new_header = self._extension_header_builder(fragment, header)
+                    if header not in [58, 6, 17] and j+1 < len(headerchain):
+                        new_header.nh = headerchain[j+1]
+                    if j == len(headerchain)-1 and (header not in [58, 6, 17]):
+                        new_header.nh = last_header
 
-                if new_header != None:
-                    new_fragment = new_fragment / new_header
-                j += 1
+                    if new_header != None:
+                        new_fragment = new_fragment / new_header
+                    j += 1
             
-            if payload != None:
-                new_fragment = new_fragment / payload
+                if payload != None:
+                    new_fragment = new_fragment / payload
                 
-            new_fragment.plen = len(raw(new_fragment.payload))
-            new_fragment[IPv6ExtHdrFragment].offset = new_fragment_offset
+                new_fragment.plen = len(raw(new_fragment.payload))
+                new_fragment[IPv6ExtHdrFragment].offset = new_fragment_offset
             
-            new_fragment_offset += len(raw(new_fragment[IPv6ExtHdrFragment].payload)) // 8
+                new_fragment_offset += len(raw(new_fragment[IPv6ExtHdrFragment].payload)) // 8
             
-            if MIP6MH_BRR in new_fragment:
-                aux = new_fragment[MIP6MH_BRR].copy()
-                del aux.payload
-                #aux.show()
-                csum = in6_chksum(135, basic_header, raw(aux))
-                new_fragment[MIP6MH_BRR].cksum = csum
-                #new_fragment[MIP6MH_BRR].show()
+                if MIP6MH_BRR in new_fragment:
+                    aux = new_fragment[MIP6MH_BRR].copy()
+                    del aux.payload
+                    #aux.show()
+                    csum = in6_chksum(135, basic_header, raw(aux))
+                    new_fragment[MIP6MH_BRR].cksum = csum
+                    #new_fragment[MIP6MH_BRR].show()
                 
-            if AH in new_fragment:
-                if str(basic_header.dst) not in self.AH_seq:
-                    self.AH_seq[str(basic_header.dst)] = 1
-                new_fragment[AH].seq = self.AH_seq[str(basic_header.dst)]
-                self.AH_seq[str(basic_header.dst)] = self.AH_seq[str(basic_header.dst)] +1
+                if AH in new_fragment:
+                    if str(basic_header.dst) not in self.AH_seq:
+                        self.AH_seq[str(basic_header.dst)] = 1
+                    new_fragment[AH].seq = self.AH_seq[str(basic_header.dst)]
+                    self.AH_seq[str(basic_header.dst)] = self.AH_seq[str(basic_header.dst)] +1
             
-            if ESP in new_fragment:
-                if str(basic_header.dst) not in self.ESP_seq:
-                    self.ESP_seq[str(basic_header.dst)] = 1
-                new_fragment[ESP].seq = self.ESP_seq[str(basic_header.dst)] 
-                self.ESP_seq[str(basic_header.dst)] = self.ESP_seq[str(basic_header.dst)] +1
+                if ESP in new_fragment:
+                    if str(basic_header.dst) not in self.ESP_seq:
+                        self.ESP_seq[str(basic_header.dst)] = 1
+                    new_fragment[ESP].seq = self.ESP_seq[str(basic_header.dst)] 
+                    self.ESP_seq[str(basic_header.dst)] = self.ESP_seq[str(basic_header.dst)] +1
                 
-                #new_payload = new_fragment[ESP].payload.copy()
-                #del new_fragment[ESP].payload
-                #new_fragment[ESP].data = new_payload
-            
-            new_fragments.append(new_fragment)
-            
-            i += 1
+                    #new_payload = new_fragment[ESP].payload.copy()
+                    #del new_fragment[ESP].payload
+                    #new_fragment[ESP].data = new_payload
+
+                new_fragments.append(new_fragment)
+                i += 1
+                
+            new_res.append(new_fragments)
+            n += 1
         
-        self.logs_handler.logger.info("header chain of the fragments processed, returning %d fragments", len(new_fragments))
-        return new_fragments
+        self.logs_handler.logger.info("header chain of the fragments processed, returning %d fragments", len(new_res)*len(new_res[0]))
+        return new_res
