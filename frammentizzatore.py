@@ -117,7 +117,7 @@ class frammentizzatore:
             return fragments, -1, -1
         
         i = 0
-        #sequences = []
+        sequences = []
         for frag in segments:
             #frag.show()
             fragment_header = frag[IPv6ExtHdrFragment]
@@ -137,11 +137,18 @@ class frammentizzatore:
                         new_pkt = pkt.copy()
                         new_pkt = new_pkt / conf.raw_layer(load=fragment_raw_payload)
                         final_packets.append(new_pkt) 
-                        #sequences.append(i)
+                        sequences.append(i)
                         if i+1 < len(segments): 
-                            subsequent_fragment = segments[i+1] 
-                            subsequent_fragment_offset = (subsequent_fragment[IPv6ExtHdrFragment].offset * 8) - Ext_header_chain_len
-                            if subsequent_fragment_offset != final_payload_len:
+                            subsequent_fragments = segments[i+1:] 
+                            k = 0
+                            flag = False
+                            while k < len(subsequent_fragments):
+                                subsequent_fragment_offset = (subsequent_fragments[k][IPv6ExtHdrFragment].offset * 8) - Ext_header_chain_len
+                                if subsequent_fragment_offset == final_payload_len:
+                                    flag = True
+                                    break
+                                k += 1
+                            if not flag:
                                 final_packets.remove(pkt)
                                 j-=1
                         else:
@@ -157,9 +164,9 @@ class frammentizzatore:
             packet.plen = len(raw(packet.payload))
             #packet.show()
         
-        #print(sequences)
+        print(sequences)
         #return final_packets    
-        self.logs_handler.logger.info("protocol %d, upper layer %d, number of final packets %d", protocol, upper_layer_header, len(final_packets))
+        self.logs_handler.logger.info("protocol %d, number of final packets %d", protocol, len(final_packets))
         return final_packets, protocol, upper_layer_header
     
     
@@ -538,7 +545,7 @@ class frammentizzatore:
         pad = PadN(otype=1, optlen=opt_len, optdata=opt)
         header = IPv6ExtHdrDestOpt(len=(2 + opt_len + 7) // 8 - 1, autopad=1, options=pad) # len=(2 + opt_len + 7) // 8 - 1
         #header.len = len(raw(header))
-        #self.logs_handler.logger.info("destnation len %d", len(raw(header)))
+        #self.logs_handler.logger.info("destination len %d", len(raw(header)))
         #header.show()
         return header
 
