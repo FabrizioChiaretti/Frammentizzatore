@@ -95,10 +95,10 @@ class inputHandler:
         if "type" not in keys:
             self.logs_handler.logger.error("type not found in input.json")
             return False
-            
+        
         obj["type"] = str(obj["type"]).lower()
-        if obj["type"] == "regular" or obj["type"] == "overlapping" or obj["type"] == "overlapping-headerchain" \
-            or obj["type"] == "regular-headerchain":
+        if obj["type"] == "regular" or obj["type"] == "overlapping" or obj["type"] == "headerchain" \
+            or obj["type"] == "overlapping-headerchain" or obj["type"] == "regular-headerchain":
             self.type = obj["type"]
         else:
             self.logs_handler.logger.warning("type not specified")

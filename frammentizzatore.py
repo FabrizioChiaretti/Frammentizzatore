@@ -35,32 +35,34 @@ class frammentizzatore:
     
     def fragmentation(self, packet):  
         res = None
+        
         if "regular" in self.input_handler.type:
             res = self.fragment(packet, self.input_handler.fragmentSize)
-            i = 0
-            while i < len(res):
-                packet.set_payload(bytes(res[i]))
-                res[i] = IPv6(packet.get_payload())
-                i += 1
-            new_res = []
-            new_res.append(res)
-            res = new_res
-            if "headerchain" in self.input_handler.type:
-                res = self.header_chain_processor(res)
                 
         if "overlapping" in self.input_handler.type:
             res = self.overlapping_fragmentation(packet)
-            if "headerchain" in self.input_handler.type:
-                res = self.header_chain_processor(res)
+        
+        if "headerchain" in self.input_handler.type:
+                if "regular" not in self.input_handler.type and "overlapping" not in self.input_handler.type:
+                    pkt = []
+                    tmp = IPv6(packet.get_payload())
+                    pkt.append([tmp])
+                    hc = []
+                    hc.append(self.input_handler.headerchain[0])
+                    self.input_handler.headerchain = hc
+                    #print(hc)
+                    res = self.header_chain_processor(pkt)
+                else:
+                    res = self.header_chain_processor(res)
         
         if res != None:
             k = 0
             while k < len(res):
                 i = 0
                 while i < len(res[k]):
-                #packet.set_payload(bytes(res[k]))
+                    #packet.set_payload(bytes(res[k][i]))
+                    #res[k][i] = IPv6(packet.get_payload())
                     self.logs_handler.logger.info("///////////////// FRAGMENT %d", i+1)
-                    #res[k] = IPv6(packet.get_payload())
                     res[k][i].show()
                     i+=1
                 k += 1
@@ -534,8 +536,18 @@ class frammentizzatore:
                 res.append(segment)
                 #segment.show()
                 break
-            
+        
         self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", len(res))
+        
+        i = 0
+        while i < len(res):
+            input_packet.set_payload(bytes(res[i]))
+            res[i] = IPv6(input_packet.get_payload())
+            i += 1
+        new_res = []
+        new_res.append(res)
+        res = new_res
+        
         return res
 
 
@@ -572,17 +584,17 @@ class frammentizzatore:
         #header = fuzz(AH())
         opt_len = len(icv)
         pad = PadN(otype=1, optlen=opt_len, optdata=icv) 
-        header = AH(seq = 0, spi=0, icv=pad, padding=b'',reserved=0) #payloadlen=((12 + len(icv)) // 4 - 2),
-        header.payloadlen = (len(raw(header))//4 -2)
+        header = AH(payloadlen=((12 + len(icv)) // 4 - 2),seq = 0, spi=1, icv=pad, padding=b'',reserved=0) #payloadlen=((12 + len(icv)) // 4 - 2),
+        #header.payloadlen = (len(raw(header))//4 -2)
         #self.logs_handler.logger.info("AH header len %d", header.payloadlen)
-        #self.logs_handler.logger.info("AH len %d", len(raw(header)))
+        self.logs_handler.logger.info("AH len %d", len(raw(header)))
         #self.logs_handler.logger.info("AH payloadlen %d", header.payloadlen)
         #self.logs_handler.logger.info("ICV len %d", len(raw(header.icv)))
         return header  
     
     
     def _esp_header(self):
-        header = ESP(spi=0, seq=0, data=None)
+        header = ESP(spi=1, seq=0, data=None)
         #self.logs_handler.logger.info("ESP len %d", len(raw(header)))
         #header.show()
         return header
@@ -593,7 +605,13 @@ class frammentizzatore:
         opt_len = len(opt)
         pad = PadN(otype=1, optlen=opt_len, optdata=opt)
         header = MIP6MH_BRR(len=1, res=0, cksum=0, res2=0, options=pad)
-        self.logs_handler.logger.info("Mobility len %d", len(raw(header)))
+        #self.logs_handler.logger.info("Mobility len %d", len(raw(header)))
+        return header
+    
+    
+    def _fragment_header(self):
+        header = IPv6ExtHdrFragment(res1=0, offset=0, res2=0, m=0, id=getrandbits(32))
+        #self.logs_handler.logger.info("fragment header len %d", len(raw(header)))
         return header
     
     
@@ -625,6 +643,8 @@ class frammentizzatore:
             if IPv6ExtHdrFragment in packet:
                 res = packet[IPv6ExtHdrFragment].copy()
                 del res.payload
+            else:
+                res = self._fragment_header()
                 
         if header == 51:
             if AH in packet:
@@ -675,7 +695,7 @@ class frammentizzatore:
             new_fragment_offset = 0
             while i < len(fragments_headerchain):
                 headerchain = fragments_headerchain[i]
-                if len(headerchain) > 0 and 44 not in headerchain:
+                if len(headerchain) > 0 and (44 not in headerchain and ("overlapping" in self.input_handler.type or "regular" in self.input_handler.type)):
                     self.logs_handler.logger.error("Fragment header not found in the header chain of fragment %d", i+1)
                     return input_fragments
                 fragment = input_fragments[n][i]
@@ -712,7 +732,7 @@ class frammentizzatore:
                     payload = payload.payload
                     last_header = 59
                 
-                if len(headerchain) == 0:
+                if len(headerchain) == 0 and ("overlapping" in self.input_handler.type or "regular" in self.input_handler.type):
                     frag_header = self._extension_header_builder(fragment, 44)
                     new_fragment = new_fragment / frag_header    
                 
@@ -735,9 +755,10 @@ class frammentizzatore:
                     new_fragment = new_fragment / payload
                 
                 new_fragment.plen = len(raw(new_fragment.payload))
-                new_fragment[IPv6ExtHdrFragment].offset = new_fragment_offset
-            
-                new_fragment_offset += len(raw(new_fragment[IPv6ExtHdrFragment].payload)) // 8
+                
+                if IPv6ExtHdrFragment in new_fragment:
+                    new_fragment[IPv6ExtHdrFragment].offset = new_fragment_offset
+                    new_fragment_offset += len(raw(new_fragment[IPv6ExtHdrFragment].payload)) // 8
             
                 if MIP6MH_BRR in new_fragment:
                     aux = new_fragment[MIP6MH_BRR].copy()
@@ -759,9 +780,9 @@ class frammentizzatore:
                     new_fragment[ESP].seq = self.ESP_seq[str(basic_header.dst)] 
                     self.ESP_seq[str(basic_header.dst)] = self.ESP_seq[str(basic_header.dst)] +1
                 
-                    #new_payload = new_fragment[ESP].payload.copy()
-                    #del new_fragment[ESP].payload
-                    #new_fragment[ESP].data = new_payload
+                    new_payload = new_fragment[ESP].payload.copy()
+                    del new_fragment[ESP].payload
+                    new_fragment[ESP].data = new_payload
 
                 new_fragments.append(new_fragment)
                 i += 1
