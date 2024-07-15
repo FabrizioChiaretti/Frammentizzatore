@@ -58,7 +58,7 @@ class inputHandler:
         
         # protocol check
         if "protocol" not in keys:
-            self.logs_handler.logger.error("protocol not found")
+            self.logs_handler.logger.error("'protocol' field not found")
             return False
         
         obj["protocol"] = str(obj["protocol"]).lower()
@@ -69,7 +69,7 @@ class inputHandler:
         
         #dstPort check
         if "dstPort" not in keys:
-            self.logs_handler.logger.error("dstPort not found in input.json")
+            self.logs_handler.logger.error("'dstPort' field not found in input.json")
             return False
         
         if (self.protocol != "udp" and self.protocol != "tcp") or (type(obj["dstPort"]) != int):
@@ -82,7 +82,7 @@ class inputHandler:
         
         # ipv6Dest check
         if "ipv6Dest" not in keys:
-            self.logs_handler.logger.error("ipv6Dest not found in input.json")
+            self.logs_handler.logger.error("'ipv6Dest' field not found in input.json")
             return False
         
         obj["ipv6Dest"] = str(obj["ipv6Dest"])
@@ -93,7 +93,7 @@ class inputHandler:
         
         # type check
         if "type" not in keys:
-            self.logs_handler.logger.error("type not found in input.json")
+            self.logs_handler.logger.error("'type' field not found in input.json")
             return False
         
         obj["type"] = str(obj["type"]).lower()
@@ -105,7 +105,7 @@ class inputHandler:
         
         # fragment size check   
         if "fragmentSize" not in keys:
-            self.logs_handler.logger.error("fragmentSize not found in input.json")
+            self.logs_handler.logger.error("'fragmentSize' field not found in input.json")
             return False
         if "regular" in self.type:
             if type(obj["fragmentSize"]) == int and obj["fragmentSize"] >= 56:
@@ -115,7 +115,7 @@ class inputHandler:
         
         # fragments check
         if "fragments" not in keys:
-            self.logs_handler.logger.error("fragments not found in input.json")
+            self.logs_handler.logger.error("'fragments' field not found in input.json")
             return False
         
         if type(obj["fragments"]) != list:
@@ -130,15 +130,15 @@ class inputHandler:
             
                 # payload lenght check
                 if "PayloadLenght" not in frag_keys:
-                    self.logs_handler.logger.error("'PayloadLenght' misses in fragment %d ", k)
+                    self.logs_handler.logger.error("'PayloadLenght' field misses in fragment %d ", k)
                     return False
                 if type(frag["PayloadLenght"]) != int:
                     self.logs_handler.logger.error("'PayloadLenght' must be a positive integer in fragment %d ", k)
                     return False
-            
+
                 # hop limit check
                 if "HopLimit" not in frag_keys:
-                    self.logs_handler.logger.error("'HopLimit' misses in fragment %d ", k)
+                    self.logs_handler.logger.error("'HopLimit' field misses in fragment %d ", k)
                     return False
                 if type(frag["HopLimit"]) != int or frag["HopLimit"] < 0 or frag["HopLimit"] > 255:
                     self.logs_handler.logger.warning("'HopLimit' must be an integer between [0,255] in fragment %d in order to be set", k)
@@ -146,17 +146,29 @@ class inputHandler:
             
                 # fragment offset check
                 if "FO" not in frag_keys:
-                    self.logs_handler.logger.error("'FO' misses in fragment %d ", k)
+                    self.logs_handler.logger.error("'FO' field misses in fragment %d ", k)
                     return False
                 if type(frag["FO"]) != int or frag["FO"] < 0:
                     self.logs_handler.logger.error("'FO' must be a positive integer in fragment %d ", k)
                     return False
                 
                 if "M" not in frag_keys:
-                    self.logs_handler.logger.error("'M' misses in fragment %d ", k)
+                    self.logs_handler.logger.error("'M' field misses in fragment %d ", k)
                     return False
                 if type(frag["M"]) != int or (frag["M"] != 0 and frag["M"] != 1):
                     self.logs_handler.logger.error("'M' must be either 0 or 1 in fragment %d ", k)
+                    return False
+                
+                # indexes check
+                if "indexes" not in frag_keys:
+                    self.logs_handler.logger.error("'indexes' field misses in fragment %d ", k)
+                    return False
+                if type(frag["indexes"]) != list or len(frag["indexes"]) > 2 or \
+                    type(frag["indexes"][0]) != int or type(frag["indexes"][1]) != int:
+                    self.logs_handler.logger.error("'indexes' field must be a list of two integers in fragment %d ", k)
+                    return False
+                if frag["indexes"][0] < 0 or (frag["indexes"][1] < 0 and frag["PayloadLenght"] > 0):
+                    self.logs_handler.logger.error("The two indexes in fragment %d must be positives numbers", k)
                     return False
                     
                 k+=1

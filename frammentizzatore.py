@@ -60,6 +60,7 @@ class frammentizzatore:
             while k < len(res):
                 i = 0
                 while i < len(res[k]):
+                    #del res[k][i].cksum
                     #packet.set_payload(bytes(res[k][i]))
                     #res[k][i] = IPv6(packet.get_payload())
                     self.logs_handler.logger.info("///////////////// FRAGMENT %d", i+1)
@@ -581,20 +582,20 @@ class frammentizzatore:
 
     def _ah_header(self):
         icv = "AA"
-        #header = fuzz(AH())
         opt_len = len(icv)
-        pad = PadN(otype=1, optlen=opt_len, optdata=icv) 
-        header = AH(payloadlen=((12 + len(icv)) // 4 - 2),seq = 0, spi=1, icv=pad, padding=b'',reserved=0) #payloadlen=((12 + len(icv)) // 4 - 2),
+        pad = PadN(otype=1, optlen=opt_len, optdata=icv)
+        header = AH(payloadlen=((12 + len(pad)) // 4 - 2), seq=0, spi=1, icv=pad, padding=b'', reserved=0) #payloadlen=((12 + len(icv)) // 4 - 2),
+        #header = fuzz(AH())
         #header.payloadlen = (len(raw(header))//4 -2)
         #self.logs_handler.logger.info("AH header len %d", header.payloadlen)
-        self.logs_handler.logger.info("AH len %d", len(raw(header)))
+        #self.logs_handler.logger.info("AH len %d", len(raw(header)))
         #self.logs_handler.logger.info("AH payloadlen %d", header.payloadlen)
         #self.logs_handler.logger.info("ICV len %d", len(raw(header.icv)))
         return header  
     
     
     def _esp_header(self):
-        header = ESP(spi=1, seq=0, data=None)
+        header = ESP(spi=None, seq=0, data=None)
         #self.logs_handler.logger.info("ESP len %d", len(raw(header)))
         #header.show()
         return header
@@ -779,7 +780,6 @@ class frammentizzatore:
                         self.ESP_seq[str(basic_header.dst)] = 1
                     new_fragment[ESP].seq = self.ESP_seq[str(basic_header.dst)] 
                     self.ESP_seq[str(basic_header.dst)] = self.ESP_seq[str(basic_header.dst)] +1
-                
                     new_payload = new_fragment[ESP].payload.copy()
                     del new_fragment[ESP].payload
                     new_fragment[ESP].data = new_payload

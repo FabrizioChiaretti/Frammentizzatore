@@ -33,7 +33,7 @@ def traffic_handler(packet):
     
     #packet.set_payload(bytes(fragments))
     #fragments.show()
-
+    #packet.set_payload(bytes(fragments[0][0]))
     sendFragments(fragments)
     #p = defragment6(fragments)
     #packet.accept()

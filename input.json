@@ -5,19 +5,19 @@
 
 	"ipv6Dest":"", 
 	
-	"type":"HeaderChain", 
+	"type":"overlapping-HeaderChain", 
 	
 	"fragmentSize": 400,
 
 	"fragments":[ 
 
-	{"PayloadLenght":32, "HopLimit":-1, "FO":0, "M": 0,
-	"HeaderChain":[{"destination":{}}, {"destination":{}},{"destination":{}}, {"destination":{}},{"fragment":{}}, {"destination":{}}, {"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}},{"destination":{}}, {"destination":{}}]},
-
-	{"PayloadLenght":32, "HopLimit":-1, "FO":8, "M": 1,
+	{"PayloadLenght":8, "HopLimit":-1, "FO":0, "M": 1, "indexes":[0,8],
 	"HeaderChain":[]},
 
-	{"PayloadLenght":16, "HopLimit":-1, "FO":32, "M": 1,
+	{"PayloadLenght":8, "HopLimit":-1, "FO":8, "M": 1, "indexes":[0,100],
+	"HeaderChain":[]},
+
+	{"PayloadLenght":-1, "HopLimit":-1, "FO":16, "M": 0, "indexes":[0,100],
 	"HeaderChain":[]}
 
 	]
