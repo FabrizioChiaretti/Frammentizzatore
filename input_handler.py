@@ -19,6 +19,7 @@ class inputHandler:
 
 
     def header_value(self, name):
+        
         res = ""
         
         if name == "hopbyhop":
@@ -62,7 +63,7 @@ class inputHandler:
             return False
         
         obj["protocol"] = str(obj["protocol"]).lower()
-        if obj["protocol"] == "icmpv6" or obj["protocol"] == "tcp" or obj["protocol"] == "udp" or obj["protocol"] == "ipv6":
+        if obj["protocol"] == "icmpv6" or obj["protocol"] == "tcp" or obj["protocol"] == "udp":
             self.protocol = obj["protocol"]
         else:
             self.logs_handler.logger.warning("protocol not specified")
@@ -101,12 +102,13 @@ class inputHandler:
             or obj["type"] == "overlapping-headerchain" or obj["type"] == "regular-headerchain":
             self.type = obj["type"]
         else:
-            self.logs_handler.logger.warning("type not specified")
+            self.logs_handler.logger.warning("fragmentation type not specified, default is regular")
         
         # fragment size check   
         if "fragmentSize" not in keys:
             self.logs_handler.logger.error("'fragmentSize' field not found in input.json")
             return False
+        
         if "regular" in self.type:
             if type(obj["fragmentSize"]) == int and obj["fragmentSize"] >= 56:
                 self.fragmentSize = obj["fragmentSize"]

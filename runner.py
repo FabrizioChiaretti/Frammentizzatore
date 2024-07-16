@@ -14,9 +14,6 @@ input_handler = None
 frammentatore = None
 
 def sendFragments(fragments):
-    num_of_fragments = len(fragments)
-    #logs_handler.logger.info("Sending %d fragments", num_of_fragments)
-    #for i in range (0,1000):
     for frag in fragments:
         send(frag)
     logs_handler.logger.info("Fragments sent")
@@ -31,11 +28,7 @@ def traffic_handler(packet):
         packet.accept()
         return
     
-    #packet.set_payload(bytes(fragments))
-    #fragments.show()
-    #packet.set_payload(bytes(fragments[0][0]))
     sendFragments(fragments)
-    #p = defragment6(fragments)
     #packet.accept()
     packet.drop()
     return

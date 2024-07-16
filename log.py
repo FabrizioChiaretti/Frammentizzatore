@@ -5,6 +5,6 @@ class log:
     
     def __init__(self):
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger("Frammentizzatore")
         
         

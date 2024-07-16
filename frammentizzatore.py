@@ -60,10 +60,9 @@ class frammentizzatore:
             while k < len(res):
                 i = 0
                 while i < len(res[k]):
-                    #del res[k][i].cksum
                     #packet.set_payload(bytes(res[k][i]))
                     #res[k][i] = IPv6(packet.get_payload())
-                    self.logs_handler.logger.info("///////////////// FRAGMENT %d", i+1)
+                    self.logs_handler.logger.info("\n########## FRAGMENT %d ##########", i+1)
                     res[k][i].show()
                     i+=1
                 k += 1
@@ -177,7 +176,6 @@ class frammentizzatore:
         
         packet = IPv6(input_packet.get_payload())
         #packet.show()
-        #self.logs_handler.logger.debug("/////////////////// original packet")
         
         tmp = self.headerCheck(packet)
         if tmp == False:
@@ -189,14 +187,18 @@ class frammentizzatore:
         
         first_fragment = basic_header.copy()
         headers_to_skip = [0,60,43] # Hop-by-Hop Options, Destination Options, Routing Header
-        i = 0
         
-        while (int(packet[i].nh) in headers_to_skip):
-            first_fragment = first_fragment / packet[i+1]
+        i = 0
+        nh = basic_header.nh
+        while (nh in headers_to_skip):
+            header = packet[i+1].copy()
+            del header.payload
+            first_fragment = first_fragment / header
             i +=1
+            nh = header.nh
         
         input_payload = packet[i].payload.copy()
-        next_header_chain = [] # header chain placed after the fragment header IPv6ExtHdrDestOpt(nh = 58, len = len(raw(IPv6ExtHdrDestOpt())))
+        next_header_chain = [] # header chain placed after the fragment header
         j = i
         while (packet[j].nh not in [59, 6, 17, 58]): # no next header, udp, UDP, icmpv6
             input_payload[j].remove_payload()
@@ -205,7 +207,6 @@ class frammentizzatore:
             j+=1
         
         if int(packet[j].nh) == 6 or int(packet[j].nh) == 17: # udp or UDP
-            #input_payload[j].show()
             input_payload[j].remove_payload()
             next_header_chain.append(input_payload[j])
         
@@ -217,7 +218,7 @@ class frammentizzatore:
             #h.show()
         Ext_header_chain_len = 0
         Ext_header_chain = next_header_chain.copy()
-        Ext_header_chain.pop()
+        Ext_header_chain.pop() # remove the upper layer header
         for header in Ext_header_chain:
             Ext_header_chain_len += len(header)
         #self.logs_handler.logger.error("chain len %d", Ext_header_chain_len)   
@@ -225,7 +226,7 @@ class frammentizzatore:
         #input_payload.show()
         first_fragment[i].nh = 44 # netx header = fragment header
         UnfragPart = first_fragment.copy()
-        UnfragPartLen = len(raw(UnfragPart))
+        #UnfragPartLen = len(raw(UnfragPart))
         #UnfragPart.show()
         first_fragment = first_fragment / IPv6ExtHdrFragment()  
         #first_fragment.show()
@@ -253,7 +254,7 @@ class frammentizzatore:
                 #self.logs_handler.logger.debug("len raw payload %d", len(raw_payload))
                 #payload = input_payload[fragment_offset:last_byte]
                 #payload.show()
-                if len(raw_payload) > 0 and len(next_header_chain) > 0 and frag["FO"]  == 0:
+                if len(raw_payload) > 0 and len(next_header_chain) > 0 and frag["FO"] == 0:
                     #payload.show()
                     fragHeader.nh = nh 
                     raw_payload_len = len(raw_payload) 
@@ -444,12 +445,16 @@ class frammentizzatore:
         #basic_header.show()
         
         first_fragment = basic_header.copy()
+        
         headers_to_skip = [0,60,43] # Hop-by-Hop Options, Destination Options, Routing Header
         i = 0
-        
-        while (int(packet[i].nh) in headers_to_skip):
-            first_fragment = first_fragment / packet[i+1]
+        nh = basic_header.nh
+        while (nh in headers_to_skip):
+            header = packet[i+1].copy()
+            del header.payload
+            first_fragment = first_fragment / header
             i +=1
+            nh = header.nh
             
         first_fragment[i].nh = 44 # next header = fragment header
         packet_id = getrandbits(32)
@@ -461,12 +466,12 @@ class frammentizzatore:
         #fragHeader.show()
         
         input_payload = packet[i].payload.copy() # fragmentable part
-        payload_check = packet[i].payload.copy() # packet[i+1].payload.show()
+        payload_check = packet[i].payload.copy()
         #payload_check.show()
         next_header_chain_lenght = 0        
         j = i     
         #packet[j].show()   
-        while (packet[j].nh not in [59, 6, 17, 58]): # no next header, udp, UDP, icmpv6
+        while (packet[j].nh not in [59, 6, 17, 58]): # no next header, tcp, udp, icmpv6
             payload_check[j].remove_payload()
             next_header_chain_lenght += len(raw(payload_check[j]))
             payload_check = packet[j+1].payload.copy()
@@ -494,6 +499,7 @@ class frammentizzatore:
             return [first_fragment]
         
         ##### num_of_fragments > 1 #####
+        
         fragPart_len = len(raw(first_fragment[IPv6ExtHdrFragment].payload)) # len of the payload to fragment
         #if fragPart_len < self.min_payload_lenght:
             #return [first_fragment]
@@ -505,11 +511,11 @@ class frammentizzatore:
         #UnfragPart.show()
         
         if (fragment_size -FragHeaderLen -UnfragPartLen) % 8 != 0:
-            self.logs_handler.logger.error("Fragment size not valid, it must be a multiple of 8-octets")
+            self.logs_handler.logger.error("Invalid fragment size, it must be a multiple of 8-octets")
             return None
         
         if fragment_size < FragHeaderLen + UnfragPartLen + next_header_chain_lenght:
-            self.logs_handler.logger.error("Fragment size not valid, it must be at least %d and a multiple of 8-octets", FragHeaderLen + UnfragPartLen + next_header_chain_lenght)
+            self.logs_handler.logger.error("Invalid fragment size, it must be at least %d and a multiple of 8-octets", FragHeaderLen + UnfragPartLen + next_header_chain_lenght)
             return None
     
         innerFragSize = fragment_size -FragHeaderLen -UnfragPartLen
@@ -819,7 +825,7 @@ class frammentizzatore:
 
                 new_fragments.append(new_fragment)
                 i += 1
-                
+            
             new_res.append(new_fragments)
             n += 1
         
