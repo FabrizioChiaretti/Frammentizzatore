@@ -3,23 +3,22 @@
 	
 	"dstPort": -1,
 
-	"ipv6Dest":"2600::", 
+	"ipv6Dest":"", 
 	
-	"type":"overlapping-HeaderChain", 
+	"type":"HeaderChain", 
 	
 	"fragmentSize": 400,
 
 	"fragments":[ 
 
-	{"PayloadLenght":8, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
-	"HeaderChain":[{"fragment":{}}, {"destination":{}}]},
+	{"PayloadLenght":16, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
+	"HeaderChain":[{"destination":{}}] },
 
-	{"PayloadLenght":200, "HopLimit":-1, "FO":8, "M": 1, "indexes":[],
+	{"PayloadLenght":200, "HopLimit":-1, "FO":16, "M": 1, "indexes":[],
 	"HeaderChain":[{"fragment":{}}]},
 
-	{"PayloadLenght":100, "HopLimit":-1, "FO":208, "M": 0, "indexes":[208, 308],
-	"HeaderChain":[{"fragment":{}}]}
+	{"PayloadLenght":100, "HopLimit":-1, "FO":216, "M": 0, "indexes":[208, 308],
+	"HeaderChain":[{"destination":{}}, {"fragment":{}}]}
 
 	]
 }
-

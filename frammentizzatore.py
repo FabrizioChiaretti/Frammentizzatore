@@ -721,7 +721,7 @@ class frammentizzatore:
                     k+=1
             
                 last_header = None
-                if payload.nh == 6: # tcpù
+                if payload.nh == 6: # tcp
                     payload = payload[TCP]
                     last_header = 6
         
@@ -737,27 +737,56 @@ class frammentizzatore:
                     payload = payload.payload
                     last_header = 59
                 
-                if len(headerchain) == 0 and ("overlapping" in self.input_handler.type or "regular" in self.input_handler.type):
-                    frag_header = self._extension_header_builder(fragment, 44)
-                    new_fragment = new_fragment / frag_header    
+                if len(headerchain) == 0: 
+                    if "overlapping" in self.input_handler.type or "regular" in self.input_handler.type:
+                        frag_header = self._extension_header_builder(fragment, 44)
+                        new_fragment = new_fragment / frag_header
+                        if payload != None:
+                            new_fragment = new_fragment / payload  
+                    else:
+                        return input_fragments  
                 
-                j = 0
-                while j < len(headerchain):
-                    header = headerchain[j]
-                    if j == 0:
-                        new_fragment.nh = header
-                    new_header = self._extension_header_builder(fragment, header)
-                    if header not in [58, 6, 17] and j+1 < len(headerchain):
-                        new_header.nh = headerchain[j+1]
-                    if j == len(headerchain)-1 and (header not in [58, 6, 17]):
-                        new_header.nh = last_header
+                if "payload" not in headerchain or headerchain[len(headerchain)-1] == "payload":
+                    if "payload" in headerchain:
+                        headerchain.remove("payload")
+                    j = 0
+                    while j < len(headerchain):
+                        header = headerchain[j]
+                        if j == 0:
+                            new_fragment.nh = header
+                        new_header = self._extension_header_builder(fragment, header)
+                        if header not in [58, 6, 17] and j+1 < len(headerchain):
+                            new_header.nh = headerchain[j+1]
+                        if j == len(headerchain)-1 and (header not in [58, 6, 17]):
+                            new_header.nh = last_header
 
-                    if new_header != None:
-                        new_fragment = new_fragment / new_header
-                    j += 1
+                        if new_header != None:
+                            new_fragment = new_fragment / new_header
+                        j += 1
             
-                if payload != None:
-                    new_fragment = new_fragment / payload
+                    if payload != None:
+                        new_fragment = new_fragment / payload
+                        
+                else:
+                    j = 0
+                    new_fragment.nh = headerchain[0] if headerchain[0] != "payload" else last_header
+                    while j < len(headerchain):
+                        header = headerchain[j]
+                        if header == "payload":
+                            if payload != None:
+                                new_fragment = new_fragment / payload
+                        else:
+                            new_header = self._extension_header_builder(fragment, header)
+                            if header not in [58, 6, 17] and j+1 < len(headerchain):
+                                if headerchain[j+1] != "payload":
+                                    new_header.nh = headerchain[j+1]
+                                else:
+                                    new_header.nh = last_header
+                            if j == len(headerchain)-1 and (header not in [58, 6, 17]):
+                                new_header.nh = 59
+                            if new_header != None:
+                                new_fragment = new_fragment / new_header
+                        j+=1
                 
                 new_fragment.plen = len(raw(new_fragment.payload))
                 

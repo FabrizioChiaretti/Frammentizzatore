@@ -121,9 +121,9 @@ class inputHandler:
         if type(obj["fragments"]) != list:
             self.logs_handler.logger.error("fragments filed must be a list")
             return False
-
+        
+        fragments = obj["fragments"]
         if "overlapping" in self.type:
-            fragments = obj["fragments"]
             k = 1
             for frag in fragments:
                 frag_keys = frag.keys()
@@ -193,15 +193,18 @@ class inputHandler:
                     return False
                 headers = []
                 for header in frag["HeaderChain"]:
-                    if type(header) != dict:
+                    if type(header) == str and header.lower() == "payload":
+                        headers.append(header.lower())
+                    elif type(header) == dict:
+                        key = list(header.keys())
+                        if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility", "icmpv6", "tcp", "udp"]:
+                            self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
+                            return False
+                        header_value = self.header_value(key[0].lower())
+                        headers.append(header_value)
+                    else:
                         self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
                         return False
-                    key = list(header.keys())
-                    if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility", "icmpv6", "tcp", "udp"]:
-                        self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
-                        return False
-                    header_value = self.header_value(key[0].lower())
-                    headers.append(header_value)
                 self.headerchain.append(headers)
                 k += 1
         #print("//////////////////")
