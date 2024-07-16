@@ -122,7 +122,7 @@ class inputHandler:
             self.logs_handler.logger.error("fragments filed must be a list")
             return False
 
-        if "overlapping" in self.type or "headerchain" in self.type:
+        if "overlapping" in self.type:
             fragments = obj["fragments"]
             k = 1
             for frag in fragments:
@@ -133,7 +133,7 @@ class inputHandler:
                     self.logs_handler.logger.error("'PayloadLenght' field misses in fragment %d ", k)
                     return False
                 if type(frag["PayloadLenght"]) != int:
-                    self.logs_handler.logger.error("'PayloadLenght' must be a positive integer in fragment %d ", k)
+                    self.logs_handler.logger.error("'PayloadLenght' must be a positive integer and a multiple number of 8 in fragment %d ", k)
                     return False
 
                 # hop limit check
@@ -163,17 +163,23 @@ class inputHandler:
                 if "indexes" not in frag_keys:
                     self.logs_handler.logger.error("'indexes' field misses in fragment %d ", k)
                     return False
-                if type(frag["indexes"]) != list or len(frag["indexes"]) > 2 or \
-                    type(frag["indexes"][0]) != int or type(frag["indexes"][1]) != int:
-                    self.logs_handler.logger.error("'indexes' field must be a list of two integers in fragment %d ", k)
+                if type(frag["indexes"]) != list or (len(frag["indexes"]) != 2 and len(frag["indexes"]) != 0) or \
+                    (len(frag["indexes"]) == 2 and (type(frag["indexes"][0]) != int or type(frag["indexes"][1]) != int)):
+                    self.logs_handler.logger.error("'indexes' field must be an empty list or a list of two integers in fragment %d ", k)
                     return False
-                if frag["indexes"][0] < 0 or (frag["indexes"][1] < 0 and frag["PayloadLenght"] > 0):
-                    self.logs_handler.logger.error("The two indexes in fragment %d must be positives numbers", k)
+                if len(frag["indexes"]) == 2 and (frag["indexes"][0] < 0 or (frag["indexes"][1] < 0 and frag["PayloadLenght"] > 0) or\
+                    (frag["indexes"][1] > 0 and frag["PayloadLenght"] < 0)):
+                    self.logs_handler.logger.error("The two indexes and PayloadLeght must be positives numbers in fragment %d", k)
+                    return False
+                
+                # PayloadLenght and indexes check
+                if len(frag["indexes"]) == 2 and (frag["indexes"][1] > 0 and frag["PayloadLenght"] > 0) and (frag["indexes"][1] - frag["indexes"][0] != frag["PayloadLenght"]):
+                    self.logs_handler.logger.error("Invalid indexes and PayloadLeght in fragment %d", k)
                     return False
                     
                 k+=1
             
-            self.fragments = fragments
+        self.fragments = fragments
 
         if "headerchain" in self.type:
             k = 1
@@ -187,6 +193,9 @@ class inputHandler:
                     return False
                 headers = []
                 for header in frag["HeaderChain"]:
+                    if type(header) != dict:
+                        self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
+                        return False
                     key = list(header.keys())
                     if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility", "icmpv6", "tcp", "udp"]:
                         self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)

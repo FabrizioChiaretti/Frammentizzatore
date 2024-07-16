@@ -167,7 +167,7 @@ class frammentizzatore:
             packet.plen = len(raw(packet.payload))
             #packet.show()
         
-        print(sequences)
+        #print(sequences)
         #return final_packets    
         self.logs_handler.logger.info("protocol %d, number of final packets %d", protocol, len(final_packets))
         return final_packets, protocol, upper_layer_header
@@ -240,16 +240,20 @@ class frammentizzatore:
         nh = packet[i].nh
         fragments = self.input_handler.fragments
         for frag in fragments:
-            fragment_offset = frag["FO"]
-            last_byte = frag["PayloadLenght"] + fragment_offset if frag["PayloadLenght"] >= 0 else len(input_payload)
-            hop_limit = frag["HopLimit"]
+            if len(frag["indexes"]) > 0:
+                fragment_offset = frag["indexes"][0]
+                last_byte = frag["indexes"][1] if frag["indexes"][1] >= 0 else len(input_payload)
+            else:
+                fragment_offset = frag["FO"]
+                last_byte = frag["PayloadLenght"] + fragment_offset if frag["PayloadLenght"] >= 0 else len(input_payload)
+            
             if (fragPartLen >= last_byte):
                 #self.logs_handler.logger.debug("last byte %d, fragment offset %d", last_byte, fragment_offset)
                 raw_payload = fragPartStr[fragment_offset:last_byte]
                 #self.logs_handler.logger.debug("len raw payload %d", len(raw_payload))
                 #payload = input_payload[fragment_offset:last_byte]
                 #payload.show()
-                if len(raw_payload) > 0 and len(next_header_chain) > 0 and fragment_offset == 0:
+                if len(raw_payload) > 0 and len(next_header_chain) > 0 and frag["FO"]  == 0:
                     #payload.show()
                     fragHeader.nh = nh 
                     raw_payload_len = len(raw_payload) 
@@ -271,15 +275,15 @@ class frammentizzatore:
                 else:
                     fragHeader.nh = 59 # no next header
                 
-                fragHeader.offset = fragment_offset // 8
+                fragHeader.offset = frag["FO"]  // 8
                 fragHeader.m = frag["M"]
                 #if j > 0:
                 #    fragHeader.nh = 58 # no next header for all segments except the first
                 segment = UnfragPart / fragHeader / raw_payload
                 segment.plen = len(raw(segment.payload))
                 
-                if hop_limit >= 0:
-                    segment.hlim = hop_limit
+                if frag["HopLimit"] >= 0:
+                    segment.hlim = frag["HopLimit"]
                 
                 if len(raw(segment)) > self.max_fragment_lenght:
                     self.logs_handler.logger.error("The lenght of the fragment %d is greater than the maximum fragment lenght (1280)", j+1)
