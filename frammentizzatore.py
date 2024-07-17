@@ -119,7 +119,7 @@ class frammentizzatore:
             return fragments, -1, -1
         
         i = 0
-        sequences = []
+        #sequences = []
         for frag in segments:
             #frag.show()
             fragment_header = frag[IPv6ExtHdrFragment]
@@ -139,7 +139,7 @@ class frammentizzatore:
                         new_pkt = pkt.copy()
                         new_pkt = new_pkt / conf.raw_layer(load=fragment_raw_payload)
                         final_packets.append(new_pkt) 
-                        sequences.append(i)
+                        #sequences.append(i)
                         if i+1 < len(segments): 
                             subsequent_fragments = segments[i+1:] 
                             k = 0
@@ -224,7 +224,7 @@ class frammentizzatore:
         #self.logs_handler.logger.error("chain len %d", Ext_header_chain_len)   
         input_payload =  packet[i].payload.copy() # payload coming next to the fragment header
         #input_payload.show()
-        first_fragment[i].nh = 44 # netx header = fragment header
+        first_fragment[i].nh = 44 # next header = fragment header
         UnfragPart = first_fragment.copy()
         #UnfragPartLen = len(raw(UnfragPart))
         #UnfragPart.show()
@@ -260,18 +260,18 @@ class frammentizzatore:
                     raw_payload_len = len(raw_payload) 
                     while nh not in [59, 6, 17, 58] and raw_payload_len > 0:
                         header = next_header_chain.pop(0)
-                        if raw_payload_len < len(raw(header)):
-                            self.logs_handler.logger.error("Something goes wrong while creating fragment %d, payload lenght should be at least %d bytes higher", j+1, len(raw(header)) - raw_payload_len)
-                            return None
+                        #if raw_payload_len < len(raw(header)):
+                            #self.logs_handler.logger.error("Something goes wrong while creating fragment %d, payload lenght should be at least %d bytes higher", j+1, len(raw(header)) - raw_payload_len)
+                            #return None
 
                         raw_payload_len -= len(raw(header))
                         nh = header.nh
                         
                     if nh in [59, 6, 17, 58] and len(next_header_chain) > 0:
                         header = next_header_chain.pop(0)
-                        if raw_payload_len < len(raw(header)):
-                            self.logs_handler.logger.error("Something goes wrong while creating fragment %d, payload lenght should be at least %d bytes higher", j+1, len(raw(header))-raw_payload_len)   
-                            return None
+                        #if raw_payload_len < len(raw(header)):
+                            #self.logs_handler.logger.error("Something goes wrong while creating fragment %d, payload lenght should be at least %d bytes higher", j+1, len(raw(header))-raw_payload_len)   
+                            #return None
                         
                 else:
                     fragHeader.nh = 59 # no next header
@@ -287,7 +287,7 @@ class frammentizzatore:
                     segment.hlim = frag["HopLimit"]
                 
                 if len(raw(segment)) > self.max_fragment_lenght:
-                    self.logs_handler.logger.error("The lenght of the fragment %d is greater than the maximum fragment lenght (1280)", j+1)
+                    self.logs_handler.logger.error("The lenght of the fragment %d is greater than the maximum fragment lenght (%d)", j+1, self.max_fragment_lenght)
                     return None
                 
                 res.append(segment)
@@ -299,6 +299,7 @@ class frammentizzatore:
             
             j+=1
         
+        # ordering the fragments
         tmp = res
         new_res = []
         while tmp:
@@ -311,7 +312,8 @@ class frammentizzatore:
                     min_pos = i
                     min_offset = cur_offset
                 i += 1
-                
+            
+            #tmp[min_pos].show()
             input_packet.set_payload(bytes(tmp[min_pos]))
             tmp[min_pos] = IPv6(input_packet.get_payload())
             new_res.append(tmp[min_pos])
@@ -337,8 +339,8 @@ class frammentizzatore:
                     input_packet.set_payload(bytes(original_packets[i]))
                     original_packets[i] = IPv6(input_packet.get_payload())
                     frag = res[upper_layer_header]
-                    input_packet.set_payload(bytes(frag))
-                    frag = IPv6(input_packet.get_payload())
+                    #input_packet.set_payload(bytes(frag))
+                    #frag = IPv6(input_packet.get_payload())
                     #frag[ICMPv6EchoRequest].id = 0xffff
                     #frag[ICMPv6EchoRequest].seq = 0xffff
                     del frag[ICMPv6EchoRequest].cksum
@@ -371,8 +373,8 @@ class frammentizzatore:
                     input_packet.set_payload(bytes(original_packets[i]))
                     original_packets[i] = IPv6(input_packet.get_payload())
                     frag = res[upper_layer_header]
-                    input_packet.set_payload(bytes(frag))
-                    frag = IPv6(input_packet.get_payload())
+                    #input_packet.set_payload(bytes(frag))
+                    #frag = IPv6(input_packet.get_payload())
                     #frag[TCP].id = 0xffff
                     #frag[TCP].seq = 0xffff
                     del frag[TCP].chksum
@@ -402,8 +404,8 @@ class frammentizzatore:
                     input_packet.set_payload(bytes(original_packets[i]))
                     original_packets[i] = IPv6(input_packet.get_payload())
                     frag = res[upper_layer_header]
-                    input_packet.set_payload(bytes(frag))
-                    frag = IPv6(input_packet.get_payload())
+                    #input_packet.set_payload(bytes(frag))
+                    #frag = IPv6(input_packet.get_payload())
                     #frag[UDP].id = 0xffff
                     #frag[UDP].seq = 0xffff
                     del frag[UDP].chksum
@@ -605,7 +607,7 @@ class frammentizzatore:
     
     
     def _esp_header(self):
-        header = ESP(spi=None, seq=0, data=None)
+        header = ESP(spi=1, seq=0, data=None)
         #self.logs_handler.logger.info("ESP len %d", len(raw(header)))
         #header.show()
         return header
@@ -742,6 +744,10 @@ class frammentizzatore:
                 elif payload.nh == 59: # no next header
                     payload = payload.payload
                     last_header = 59
+                    
+                else:
+                    self.logs_handler.logger.error("Can not handle header chain of the fragments, unknown next header encountered")
+                    return input_fragments
                 
                 if len(headerchain) == 0: 
                     if "overlapping" in self.input_handler.type or "regular" in self.input_handler.type:
@@ -752,7 +758,7 @@ class frammentizzatore:
                     else:
                         return input_fragments  
                 
-                if "payload" not in headerchain or headerchain[len(headerchain)-1] == "payload":
+                elif "payload" not in headerchain or headerchain[len(headerchain)-1] == "payload":
                     if "payload" in headerchain:
                         headerchain.remove("payload")
                     j = 0
