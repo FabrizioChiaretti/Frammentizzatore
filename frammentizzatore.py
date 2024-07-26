@@ -55,16 +55,16 @@ class frammentizzatore:
                 else:
                     res = self.header_chain_processor(res)
         
-        '''if res != None:
+        if res != None:
             k = 0
             while k < len(res):
                 i = 0
                 while i < len(res[k]):
-                    res[k][i] = IPv6(res[k][i])
+                    #res[k][i] = IPv6(res[k][i])
                     self.logs_handler.logger.info("\n########## FRAGMENT %d ##########", i+1)
                     res[k][i].show()
                     i+=1
-                k += 1'''
+                k += 1
             
         return res
     
@@ -345,6 +345,7 @@ class frammentizzatore:
             
             j+=1
         
+        original_fragments = res.copy()
         aux = res.copy()
         first_fragments = []
         k = 0
@@ -377,13 +378,16 @@ class frammentizzatore:
                         del original_packets[i][ICMPv6EchoRequest].cksum
                         input_packet.set_payload(bytes(original_packets[i]))
                         original_packets[i] = IPv6(input_packet.get_payload())
+                        print(original_packets[i][ICMPv6EchoRequest].cksum)
                         frag = res[upper_layer_header]
                         #frag[ICMPv6EchoRequest].id = 0xffff
                         #frag[ICMPv6EchoRequest].seq = 0xffff
+                        frag_pos = original_fragments.index(frag)
                         del frag[ICMPv6EchoRequest].cksum
                         frag[ICMPv6EchoRequest].cksum = original_packets[i][ICMPv6EchoRequest].cksum
                         res[upper_layer_header] = frag
-                        segments = res.copy() + first_fragments[:k] + first_fragments[k+1:]
+                        segments = original_fragments.copy()
+                        segments[frag_pos] = res[upper_layer_header]
                         final_segments.append(segments)
                     i+=1
                 
@@ -430,8 +434,6 @@ class frammentizzatore:
                 if flag == False:
                     self.logs_handler.logger.error("tcp header checksum not found")
                     return None
-                
-                
                 
                 '''new_original_packets, protocol, upper_layer_header = self.payload_defragment(basic_header, Ext_header_chain_len, final_segments[0], input_packet=packet)
                 original_packets[0] = raw(original_packets[0])

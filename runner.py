@@ -14,6 +14,7 @@ input_handler = None
 frammentatore = None
 
 def sendFragments(fragments):
+    #fragments = [fragments[1]]
     for frag in fragments:
         p = list(permutations(frag))
         for f in p:

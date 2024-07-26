@@ -3,7 +3,7 @@
 	
 	"dstPort": -1,
 
-	"ipv6Dest":"2600::", 
+	"ipv6Dest":"", 
 	
 	"type":"overlapping", 
 	
