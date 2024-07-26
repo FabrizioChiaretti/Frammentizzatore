@@ -1,26 +1,32 @@
 {	
-	"protocol": "udp",
+	"protocol": "icmpv6",
 	
 	"dstPort": -1,
 
-	"ipv6Dest":"", 
+	"ipv6Dest":"2600::", 
 	
 	"type":"overlapping", 
 	
 	"fragmentSize": 400,
 
 	"fragments":[ 
-	
-	{"PayloadLenght":0, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
+
+	{"PayloadLenght":32, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
 	"HeaderChain":[]},
 
-	{"PayloadLenght":8, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
+	{"PayloadLenght":16, "HopLimit":-1, "FO":32, "M": 1, "indexes":[],
 	"HeaderChain":[]},
 
-	{"PayloadLenght":8, "HopLimit":-1, "FO":8, "M": 1, "indexes":[],
+	{"PayloadLenght":24, "HopLimit":-1, "FO":48, "M": 1, "indexes":[],
 	"HeaderChain":[]},
 
-	{"PayloadLenght":-1, "HopLimit":-1, "FO":16, "M": 0, "indexes":[],
+	{"PayloadLenght":32, "HopLimit":-1, "FO":8, "M": 1, "indexes":[],
+	"HeaderChain":[]},
+
+	{"PayloadLenght":24, "HopLimit":-1, "FO":48, "M": 1, "indexes":[],
+	"HeaderChain":[]},
+
+	{"PayloadLenght":24, "HopLimit":-1, "FO":72, "M": 0, "indexes":[],
 	"HeaderChain":[]}
 
 	]

@@ -16,6 +16,11 @@ class inputHandler:
         self.fragmentSize = 1280
         self.fragments = None
         self.headerchain = []
+        self.udp_sport = None
+        self.udp_dport = None
+        self.tcp_sport = None
+        self.tcp_dport = None
+        self.tcp_flags = None
 
 
     def header_value(self, name):
@@ -202,6 +207,47 @@ class inputHandler:
                         if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility", "icmpv6", "tcp", "udp"]:
                             self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
                             return False
+                        if key[0].lower() == "udp" and len(header["udp"]) > 0 and len(header["udp"]) <= 2:
+                               if "sport" in header["udp"]:
+                                sport = header["udp"]["sport"]
+                                if type(sport) != int or sport < 0 or sport > 65535:
+                                    self.logs_handler.logger.error("udp sport must be an integer between [0, 65535] in fragment %d ", k)
+                                    return False
+                                self.udp_sport = sport
+                                
+                               if "dport" in header["udp"]:
+                                dport = header["udp"]["dport"]
+                                if type(dport) != int or dport < 0 or dport > 65535:
+                                    self.logs_handler.logger.error("udp dport must be an integer between [0, 65535] in fragment %d ", k)
+                                    return False
+                                self.udp_dport = dport
+                        
+                        if key[0].lower() == "tcp" and len(header["tcp"]) > 0 and len(header["tcp"]) <= 3:
+                            if "sport" in header["tcp"]:
+                                sport = header["tcp"]["sport"]
+                                if type(sport) != int or sport < 0 or sport > 65535:
+                                    self.logs_handler.logger.error("tcp sport must be an integer between [0, 65535] in fragment %d ", k)
+                                    return False
+                                self.tcp_sport = sport
+                                        
+                            if "dport" in header["tcp"]:
+                                dport = header["tcp"]["dport"]
+                                if type(dport) != int or dport < 0 or dport > 65535:
+                                    self.logs_handler.logger.error("tcp dport must be an integer between [0, 65535] in fragment %d ", k)
+                                    return False
+                                self.tcp_dport = dport
+                                    
+                            if "flags" in header["tcp"]:
+                                flags = header["tcp"]["flags"]
+                                if type(flags) != str:
+                                    self.logs_handler.logger.error("tcp flags must be a string in fragment %d", k)
+                                    return False
+                                for flag in flags:
+                                    if flag not in "FSRPAUEC":
+                                        self.logs_handler.logger.error("Unknown tcp flag in fragment %d, only F S R P A U E C are known", k)
+                                        return False
+                                self.tcp_flags = flags
+                                      
                         header_value = self.header_value(key[0].lower())
                         headers.append(header_value)
                     else:
@@ -211,6 +257,7 @@ class inputHandler:
                 k += 1
         #print("//////////////////")
         #print(self.headerchain)
+        #print(self.udp_sport, self.udp_dport)
         
         if self.dstPort < 0:
             self.logs_handler.logger.info("protocol %s, dstPort %s, ipv6Dest %s, type %s, fragmentSize %d", \

@@ -1,5 +1,5 @@
 
-
+from itertools import permutations
 from netfilterqueue import NetfilterQueue
 import platform
 from FirewallHandler import FirewallHandler
@@ -15,7 +15,13 @@ frammentatore = None
 
 def sendFragments(fragments):
     for frag in fragments:
-        send(frag)
+        p = list(permutations(frag))
+        for f in p:
+            f = list(f)
+            send(f)
+    #logs_handler.logger.info("Fragments sent")
+    '''for frag in fragments:
+        send(frag)'''
     logs_handler.logger.info("Fragments sent")
 
 def traffic_handler(packet):
