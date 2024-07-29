@@ -14,16 +14,16 @@ input_handler = None
 frammentatore = None
 
 def sendFragments(fragments):
-    #fragments = [fragments[1]]
+    fragments = [fragments[0]]
     for frag in fragments:
         p = list(permutations(frag))
         for f in p:
             f = list(f)
             send(f)
-    #logs_handler.logger.info("Fragments sent")
-    '''for frag in fragments:
-        send(frag)'''
     logs_handler.logger.info("Fragments sent")
+    '''for frag in fragments:
+        send(frag)
+    logs_handler.logger.info("Fragments sent")'''
 
 def traffic_handler(packet):
     
@@ -35,9 +35,9 @@ def traffic_handler(packet):
         packet.accept()
         return
     
-    sendFragments(fragments)
-    #packet.accept()
     packet.drop()
+    #packet.accept()
+    sendFragments(fragments)
     return
 
 
