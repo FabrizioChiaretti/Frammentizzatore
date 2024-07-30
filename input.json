@@ -5,29 +5,23 @@
 
 	"ipv6Dest":"", 
 	
-	"type":"overlapping", 
+	"type":"overlapping-HeaderChain", 
 	
-	"fragmentSize": 400,
+	"fragmentSize": 104,
 
-	"fragments":[ 
+	"fragments":[
 
-	{"PayloadLenght":32, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
+	{"PayloadLenght":0, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
+	"HeaderChain":[{"fragment":{}}]},
+
+	{"PayloadLenght":104, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
 	"HeaderChain":[]},
 
-	{"PayloadLenght":16, "HopLimit":-1, "FO":32, "M": 1, "indexes":[],
+	{"PayloadLenght":104, "HopLimit":-1, "FO":104, "M": 1, "indexes":[],
 	"HeaderChain":[]},
 
-	{"PayloadLenght":24, "HopLimit":-1, "FO":48, "M": 1, "indexes":[],
-	"HeaderChain":[]},
-
-	{"PayloadLenght":32, "HopLimit":-1, "FO":8, "M": 1, "indexes":[],
-	"HeaderChain":[]},
-
-	{"PayloadLenght":24, "HopLimit":-1, "FO":48, "M": 1, "indexes":[],
-	"HeaderChain":[]},
-
-	{"PayloadLenght":24, "HopLimit":-1, "FO":72, "M": 0, "indexes":[],
+	{"PayloadLenght":104, "HopLimit":-1, "FO":208, "M": 0, "indexes":[],
 	"HeaderChain":[]}
-
+	
 	]
 }

@@ -107,7 +107,8 @@ class inputHandler:
             or obj["type"] == "overlapping-headerchain" or obj["type"] == "regular-headerchain":
             self.type = obj["type"]
         else:
-            self.logs_handler.logger.warning("fragmentation type not specified, default is regular")
+            self.logs_handler.logger.warning("Invalid fragmentation type")
+            return False
         
         # fragment size check   
         if "fragmentSize" not in keys:
@@ -204,7 +205,7 @@ class inputHandler:
                         headers.append(header.lower())
                     elif type(header) == dict:
                         key = list(header.keys())
-                        if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility", "icmpv6", "tcp", "udp"]:
+                        if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility", "tcp", "udp"]:
                             self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
                             return False
                         if key[0].lower() == "udp" and len(header["udp"]) > 0 and len(header["udp"]) <= 2:

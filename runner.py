@@ -14,16 +14,29 @@ input_handler = None
 frammentatore = None
 
 def sendFragments(fragments):
-    fragments = [fragments[0]]
-    for frag in fragments:
+    #fragments = [fragments[0]]
+    if fragments != None:
+        k = 0
+        while k < len(fragments):
+            i = 0
+            while i < len(fragments[k]):
+                #res[k][i] = IPv6(res[k][i])
+                logs_handler.logger.info("\n########## FRAGMENT %d ##########", i+1)
+                fragments[k][i].show()
+                i+=1
+            k += 1
+    '''for frag in fragments:
         p = list(permutations(frag))
         for f in p:
             f = list(f)
             send(f)
-    logs_handler.logger.info("Fragments sent")
-    '''for frag in fragments:
-        send(frag)
     logs_handler.logger.info("Fragments sent")'''
+    for frag in fragments:
+        send(frag)
+    logs_handler.logger.info("Fragments sent")
+    '''send(fragments[0][0])
+    sleep(5)
+    send(fragments[0][1])'''
 
 def traffic_handler(packet):
     
