@@ -15,6 +15,18 @@ class frammentizzatore:
         self.AH_seq = {}       
         self.ESP_seq = {}
     
+
+    '''def _get_layers(self, packet):
+        layers = []
+        counter = 0
+        while True:
+            layer = packet.getlayer(counter)
+            if layer is None:
+                break
+            layers.append(layer.name.lower().strip().replace("-", ""))
+            counter += 1  
+        return layers'''
+
     
     def headerCheck(self, packet):
         
@@ -36,6 +48,15 @@ class frammentizzatore:
     def fragmentation(self, packet):  
         res = None
         
+        # tcp handshake 
+        pkt = IPv6(packet.get_payload())
+        if TCP in pkt:
+            frame = pkt[TCP]
+            if len(raw(frame.payload)) == 0:
+                res = self.fragment(packet, self.max_fragment_lenght)
+                res = [res]
+                return res
+        
         if "regular" in self.input_handler.type:
             res = self.fragment(packet, self.input_handler.fragmentSize)
             res = [res]
@@ -44,17 +65,31 @@ class frammentizzatore:
             res = self.overlapping_fragmentation(packet)
         
         if "headerchain" in self.input_handler.type:
-                if "regular" not in self.input_handler.type and "overlapping" not in self.input_handler.type:
-                    pkt = []
-                    tmp = IPv6(packet.get_payload())
-                    pkt.append([tmp])
-                    hc = []
-                    hc.append(self.input_handler.headerchain[0])
-                    self.input_handler.headerchain = hc
-                    #print(hc)
-                    res = self.header_chain_processor(pkt)
-                else:
-                    res = self.header_chain_processor(res, input_packet=packet)
+            if "regular" not in self.input_handler.type and "overlapping" not in self.input_handler.type:
+                pkt = []
+                tmp = IPv6(packet.get_payload())
+                pkt.append([tmp])
+                hc = []
+                hc.append(self.input_handler.headerchain[0])
+                self.input_handler.headerchain = hc
+                #print(hc)
+                res = self.header_chain_processor(pkt)
+            else:
+                res = self.header_chain_processor(res, input_packet=packet)
+        
+        #layers = self._get_layers(res[0][0])
+        #print(layers)
+        
+        '''if res != None:
+            k = 0
+            while k < len(res):
+                i = 0
+                while i < len(res[k]):
+                    #res[k][i] = IPv6(res[k][i])
+                    self.logs_handler.logger.info("\n########## FRAGMENT %d LENGHT ##########", i+1)
+                    self.logs_handler.logger.info("########## FRAGMENT LENGHT: %d  ##########", len(raw(res[k][i][TCP].payload)))
+                    i+=1
+                k += 1'''
         
         '''if res != None:
             k = 0
@@ -363,7 +398,6 @@ class frammentizzatore:
             if frag[IPv6ExtHdrFragment].offset == 0:
                 pkt = aux.pop(k)
                 k -= 1
-                pkt[IPv6ExtHdrFragment].payload.show()
                 if len(pkt[IPv6ExtHdrFragment].payload) > 0:
                     first_fragments.append(pkt)
             k += 1
@@ -514,6 +548,7 @@ class frammentizzatore:
         i = 0
         nh = basic_header.nh
         while (nh in headers_to_skip):
+            headers_to_skip.pop()
             header = packet[i+1].copy()
             del header.payload
             first_fragment = first_fragment / header

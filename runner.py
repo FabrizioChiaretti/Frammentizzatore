@@ -6,40 +6,54 @@ from FirewallHandler import FirewallHandler
 from log import log
 from input_handler import inputHandler
 from frammentizzatore import frammentizzatore
-from scapy.all import send, sr, sr1
+from scapy.all import send, sr, sr1, TCP
 from time import sleep
 
 logs_handler = None
 input_handler = None
 frammentatore = None
+flag = False
 
 def sendFragments(fragments):
-    #fragments = [fragments[0]]
+    fragments = [fragments[0]]
     if fragments != None:
         k = 0
         while k < len(fragments):
             i = 0
             while i < len(fragments[k]):
-                #res[k][i] = IPv6(res[k][i])
                 logs_handler.logger.info("\n########## FRAGMENT %d ##########", i+1)
                 fragments[k][i].show()
                 i+=1
             k += 1
-    '''for frag in fragments:
-        p = list(permutations(frag))
-        for f in p:
-            f = list(f)
-            send(f)
-    logs_handler.logger.info("Fragments sent")'''
+            
+    last_permutation = None
+    global flag
+    k = 0
     for frag in fragments:
-        send(frag)
+        if flag:
+            break
+        p = list(permutations(frag))
+        for permutation in p:
+            if flag:
+                break
+            permutation = list(permutation)
+            k += 1
+            if len(permutation) > 1:
+                last_permutation = permutation
+            send(permutation)
+            for packet in permutation:
+                if TCP in packet:
+                    if packet[TCP].flags == "F" or packet[TCP].flags == "FA":
+                        flag = True
+                        return last_permutation
+            
+    '''for frag in fragments:
+        send(frag)'''
+        
     logs_handler.logger.info("Fragments sent")
-    '''send(fragments[0][0])
-    sleep(5)
-    send(fragments[0][1])'''
+    return last_permutation
 
 def traffic_handler(packet):
-    
     logs_handler.logger.info("Traffic intercepted")
     fragments = frammentatore.fragmentation(packet)
     
@@ -50,7 +64,17 @@ def traffic_handler(packet):
     
     packet.drop()
     #packet.accept()
-    sendFragments(fragments)
+    global flag
+    last_permutation = None
+    if not flag:
+        last_permutation = sendFragments(fragments)
+    if last_permutation != None:
+        logs_handler.logger.info("########## LAST PERMUTATION ##########")
+        i = 0
+        for frag in last_permutation:
+            logs_handler.logger.info("\n########## FRAGMENT %d ##########", i+1)
+            frag.show()
+            i += 1
     return
 
 

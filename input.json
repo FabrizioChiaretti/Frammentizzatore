@@ -1,27 +1,33 @@
 {	
-	"protocol": "icmpv6",
+	"protocol": "tcp",
 	
 	"dstPort": -1,
 
 	"ipv6Dest":"", 
 	
-	"type":"overlapping-HeaderChain", 
+	"type":"overlapping", 
 	
 	"fragmentSize": 104,
 
 	"fragments":[
 
-	{"PayloadLenght":0, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
-	"HeaderChain":[{"fragment":{}}]},
-
-	{"PayloadLenght":104, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
-	"HeaderChain":[]},
-
-	{"PayloadLenght":104, "HopLimit":-1, "FO":104, "M": 1, "indexes":[],
-	"HeaderChain":[]},
-
-	{"PayloadLenght":104, "HopLimit":-1, "FO":208, "M": 0, "indexes":[],
-	"HeaderChain":[]}
+		{"PayloadLenght":48, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
+		"HeaderChain":[]},
 	
+		{"PayloadLenght":16, "HopLimit":-1, "FO":48, "M": 1, "indexes":[],
+		"HeaderChain":[]},
+	
+		{"PayloadLenght":24, "HopLimit":-1, "FO":64, "M": 1, "indexes":[],
+		"HeaderChain":[]},
+	
+		{"PayloadLenght":32, "HopLimit":-1, "FO":40, "M": 1, "indexes":[],
+		"HeaderChain":[]},
+	
+		{"PayloadLenght":24, "HopLimit":-1, "FO":64, "M": 1, "indexes":[],
+		"HeaderChain":[]},
+	
+		{"PayloadLenght":-1, "HopLimit":-1, "FO":88, "M": 0, "indexes":[],
+		"HeaderChain":[]}	
+
 	]
 }
