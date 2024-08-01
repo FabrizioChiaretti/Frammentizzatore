@@ -12,10 +12,9 @@ from time import sleep
 logs_handler = None
 input_handler = None
 frammentatore = None
-flag = False
 
 def sendFragments(fragments):
-    fragments = [fragments[0]]
+    
     if fragments != None:
         k = 0
         while k < len(fragments):
@@ -26,32 +25,17 @@ def sendFragments(fragments):
                 i+=1
             k += 1
             
-    last_permutation = None
-    global flag
-    k = 0
-    for frag in fragments:
-        if flag:
-            break
+    '''for frag in fragments:
         p = list(permutations(frag))
         for permutation in p:
-            if flag:
-                break
             permutation = list(permutation)
-            k += 1
-            if len(permutation) > 1:
-                last_permutation = permutation
-            send(permutation)
-            for packet in permutation:
-                if TCP in packet:
-                    if packet[TCP].flags == "F" or packet[TCP].flags == "FA":
-                        flag = True
-                        return last_permutation
-            
-    '''for frag in fragments:
-        send(frag)'''
+            send(permutation)'''
+          
+    for frag in fragments:
+        send(frag)
         
     logs_handler.logger.info("Fragments sent")
-    return last_permutation
+    return
 
 def traffic_handler(packet):
     logs_handler.logger.info("Traffic intercepted")
@@ -64,17 +48,8 @@ def traffic_handler(packet):
     
     packet.drop()
     #packet.accept()
-    global flag
-    last_permutation = None
-    if not flag:
-        last_permutation = sendFragments(fragments)
-    if last_permutation != None:
-        logs_handler.logger.info("########## LAST PERMUTATION ##########")
-        i = 0
-        for frag in last_permutation:
-            logs_handler.logger.info("\n########## FRAGMENT %d ##########", i+1)
-            frag.show()
-            i += 1
+    sendFragments(fragments)
+
     return
 
 

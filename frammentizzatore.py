@@ -14,18 +14,6 @@ class frammentizzatore:
         self.input_handler = input_handler
         self.AH_seq = {}       
         self.ESP_seq = {}
-    
-
-    '''def _get_layers(self, packet):
-        layers = []
-        counter = 0
-        while True:
-            layer = packet.getlayer(counter)
-            if layer is None:
-                break
-            layers.append(layer.name.lower().strip().replace("-", ""))
-            counter += 1  
-        return layers'''
 
     
     def headerCheck(self, packet):
@@ -105,16 +93,7 @@ class frammentizzatore:
         return res
     
     
-    def payload_defragment(self, basic_header, Ext_header_chain_len, fragments, input_packet=None):
-        
-        input_protocol = None
-        if input_packet != None:
-            if TCP in input_packet:
-                input_protocol = 6
-            if UDP in input_packet:
-                input_protocol = 17
-            if ICMPv6EchoRequest in input_packet: 
-                input_protocol = 58
+    def payload_defragment(self, basic_header, Ext_header_chain_len, fragments):
         
         i = 0
         tmp = fragments.copy()
@@ -277,6 +256,7 @@ class frammentizzatore:
             i +=1
             nh = header.nh
         
+        upper_layer_payload = None
         input_payload = packet[i].payload.copy()
         next_header_chain = [] # header chain placed after the fragment header
         j = i
@@ -286,11 +266,18 @@ class frammentizzatore:
             input_payload = packet[j+1].payload.copy()
             j+=1
         
-        if int(packet[j].nh) == 6 or int(packet[j].nh) == 17: # udp or UDP
+        if int(packet[j].nh) == 6: # tcp
+            upper_layer_payload = packet[TCP].copy()
+            input_payload[j].remove_payload()
+            next_header_chain.append(input_payload[j])
+            
+        if int(packet[j].nh) == 17: # udp
+            upper_layer_payload = packet[UDP].copy()
             input_payload[j].remove_payload()
             next_header_chain.append(input_payload[j])
         
         if int(packet[j].nh) == 58:
+            upper_layer_payload = packet[ICMPv6EchoRequest].copy()
             del input_payload[j].data
             next_header_chain.append(input_payload[j])
             
@@ -413,10 +400,18 @@ class frammentizzatore:
             res = first_fragment + aux
             #for f in res:
                 #f.show()
-            original_packets, protocol, upper_layer_header = self.payload_defragment(basic_header, Ext_header_chain_len, res, input_packet=packet)  
+            original_packets, protocol, upper_layer_header = self.payload_defragment(basic_header, Ext_header_chain_len, res)  
             if protocol == -1:
                 return None
-        
+            
+            pkts = []
+            for original_packet in original_packets:
+                raw_p = raw(original_packet.payload)
+                if raw_p != raw(upper_layer_payload):
+                    pkts.append(original_packet)
+            
+            original_packets = pkts
+                
             if protocol == 58: # ICMPv6
                 i = 0
                 while i < len(original_packets): 
@@ -448,7 +443,6 @@ class frammentizzatore:
                 
             if protocol == 6: # TCP
                 i = 0
-                flag = False
                 while i < len(original_packets): 
                     original_packets[i] = IPv6(original_packets[i])
                     #original_packets[i].show()
@@ -517,15 +511,16 @@ class frammentizzatore:
 
             k += 1
         
-        lenght = 0
-        if len(final_segments) > 0:
-            lenght = len(final_segments)*len(final_segments[0])
+        if len(final_segments) == 0:
+            final_segments = [original_fragments]
+        
+        lenght = len(final_segments)*len(final_segments[0])
         self.logs_handler.logger.info("Fragmentation ends, returning %d fragments", lenght)
         #for frag in final_segments:
         #    for f in frag:
         #        f.show()
 
-        return final_segments if len(final_segments) > 0 else res
+        return final_segments
     
     
     def fragment(self, input_packet, fragment_size = 1280):

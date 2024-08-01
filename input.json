@@ -10,24 +10,9 @@
 	"fragmentSize": 104,
 
 	"fragments":[
-
-		{"PayloadLenght":48, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
-		"HeaderChain":[]},
 	
-		{"PayloadLenght":16, "HopLimit":-1, "FO":48, "M": 1, "indexes":[],
-		"HeaderChain":[]},
-	
-		{"PayloadLenght":24, "HopLimit":-1, "FO":64, "M": 1, "indexes":[],
-		"HeaderChain":[]},
-	
-		{"PayloadLenght":32, "HopLimit":-1, "FO":40, "M": 1, "indexes":[],
-		"HeaderChain":[]},
-	
-		{"PayloadLenght":24, "HopLimit":-1, "FO":64, "M": 1, "indexes":[],
-		"HeaderChain":[]},
-	
-		{"PayloadLenght":-1, "HopLimit":-1, "FO":88, "M": 0, "indexes":[],
-		"HeaderChain":[]}	
+		{"PayloadLenght":-1, "HopLimit":-1, "FO":0, "M": 0, "indexes":[],
+		"HeaderChain":[]}
 
 	]
 }
