@@ -14,7 +14,6 @@ input_handler = None
 frammentatore = None
 
 def sendFragments(fragments):
-    
     if fragments != None:
         k = 0
         while k < len(fragments):

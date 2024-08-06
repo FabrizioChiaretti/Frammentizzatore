@@ -1,17 +1,17 @@
 {	
-	"protocol": "tcp",
+	"protocol": "icmpv6",
 	
 	"dstPort": -1,
 
 	"ipv6Dest":"", 
 	
-	"type":"overlapping", 
+	"type":"regular", 
 	
 	"fragmentSize": 104,
 
 	"fragments":[
 	
-		{"PayloadLenght":-1, "HopLimit":-1, "FO":0, "M": 0, "indexes":[],
+		{"PayloadLenght":100, "HopLimit":-1, "FO":0, "M": 0, "indexes":[],
 		"HeaderChain":[]}
 
 	]

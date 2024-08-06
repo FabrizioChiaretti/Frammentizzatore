@@ -32,51 +32,62 @@ class FirewallHandler:
 
     def _insert_iptables_rules(self):
 
-        self.args = ["ip6tables", "-I", "OUTPUT"]
+        arg = ["ip6tables", "-I", "OUTPUT"]
+        self.args = [arg]
     
         if self.dest_ipv6addr != "":
-            self.args = self.args + (["-d", self.dest_ipv6addr])
+            self.args[0] = self.args[0] + (["-d", self.dest_ipv6addr])
             
         if self.protocol != "": 
-            self.args = self.args + (["-p", self.protocol])
+            self.args[0] = self.args[0] + (["-p", self.protocol])
             if self.protocol == "icmpv6":
-                self.args = self.args + (["--icmpv6-type", "echo-request"])
+                new_arg1 = self.args[0].copy() + (["--icmpv6-type", "echo-request"])
+                new_arg2 = self.args[0].copy() + (["--icmpv6-type", "echo-reply"])
+                self.args = []
+                self.args.append(new_arg1)
+                self.args.append(new_arg2)
         
         if self.dstPort >= 0: 
-            self.args = self.args + (["--dport", str(self.dstPort)])
+            self.args[0] = self.args[0] + (["--dport", str(self.dstPort)])
         
-        self.args = self.args + (["-j", "NFQUEUE", "--queue-num", str(1)])
+        self.args[0] = self.args[0] + (["-j", "NFQUEUE", "--queue-num", str(1)])
+        if len(self.args) == 2:
+            self.args[1] = self.args[1] + (["-j", "NFQUEUE", "--queue-num", str(1)])
         
-        rule = ""
         for arg in self.args:
-            rule = rule + arg + " "
-        self.logs_handler.logger.info(rule)
-            
-        proc = subprocess.Popen(self.args)
-            
-        try:
-            outs, errs = proc.communicate(timeout=15)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            
+            rule = ""
+            for s in arg:
+                rule = rule + s + " "
+            self.logs_handler.logger.info(rule)
+        
+        for arg in self.args:
+            proc = subprocess.Popen(arg)
+            try:
+                outs, errs = proc.communicate(timeout=15)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                
         return
 
 
     def _delete_iptables_rules(self):
 
-        self.args[1] = "-D"
+        self.args[0][1] = "-D"
+        if len(self.args) == 2:
+            self.args[1][1] = "-D"
 
-        rule = ""
         for arg in self.args:
-            rule = rule + arg + " "
-        self.logs_handler.logger.info(rule)
+            rule = ""
+            for s in arg:
+                rule = rule + s + " "
+            self.logs_handler.logger.info(rule)
         
-        proc = subprocess.Popen(self.args)
-        
-        try:
-            outs, errs = proc.communicate(timeout=15)
-        except subprocess.TimeoutExpired:
-            proc.kill()
+        for arg in self.args:
+            proc = subprocess.Popen(arg)
+            try:
+                outs, errs = proc.communicate(timeout=15)
+            except subprocess.TimeoutExpired:
+                proc.kill()
 
         return
 
