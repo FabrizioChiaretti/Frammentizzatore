@@ -275,6 +275,7 @@ class frammentizzatore:
                 del input_payload[j].data
                 next_header_chain.append(input_payload[j])
             else:
+                self.logs_handler.logger.warning("Can not find upper layer payload, returning the original packet...")
                 return [packet]
                 
         #for h in next_header_chain:
@@ -413,18 +414,25 @@ class frammentizzatore:
                 while i < len(original_packets): 
                     original_packets[i] = IPv6(original_packets[i])
                     #original_packets[i].show()
-                    if ICMPv6EchoRequest in original_packets[i]:
+                    if ICMPv6EchoRequest or ICMPv6EchoReply in original_packets[i]:
                         #original_packets[i][ICMPv6EchoRequest].id = 0xffff
                         #original_packets[i][ICMPv6EchoRequest].seq = 0xffff
-                        del original_packets[i][ICMPv6EchoRequest].cksum
+                        if ICMPv6EchoRequest in original_packets[i]:
+                            del original_packets[i][ICMPv6EchoRequest].cksum 
+                        else:
+                            del original_packets[i][ICMPv6EchoReply].cksum 
                         input_packet.set_payload(bytes(original_packets[i]))
                         original_packets[i] = IPv6(input_packet.get_payload())
                         frag = res[upper_layer_header]
                         #frag[ICMPv6EchoRequest].id = 0xffff
                         #frag[ICMPv6EchoRequest].seq = 0xffff
                         frag_pos = original_fragments.index(frag)
-                        del frag[ICMPv6EchoRequest].cksum
-                        frag[ICMPv6EchoRequest].cksum = original_packets[i][ICMPv6EchoRequest].cksum
+                        if ICMPv6EchoRequest in frag:
+                            del frag[ICMPv6EchoRequest].cksum
+                            frag[ICMPv6EchoRequest].cksum = original_packets[i][ICMPv6EchoRequest].cksum
+                        else:
+                            del frag[ICMPv6EchoReply].cksum
+                            frag[ICMPv6EchoReply].cksum = original_packets[i][ICMPv6EchoReply].cksum
                         #res[upper_layer_header] = frag
                         segments = original_fragments.copy()
                         segments[frag_pos] = frag
@@ -576,6 +584,7 @@ class frammentizzatore:
                 del payload_check[j].data
                 next_header_chain_lenght += len(raw(payload_check[j]))
             else:
+                self.logs_handler.logger.warning("Can not find upper layer payload, returning the original packet...")
                 return packet
         
         first_fragment = first_fragment / input_payload
@@ -628,7 +637,7 @@ class frammentizzatore:
                     fragHeader.nh = 59 # 59 = No next header
                 segment = UnfragPart / fragHeader / conf.raw_layer(load=tmp)
                 segment.plen = len(raw(segment.payload))
-                res.append(segment)
+                res.append(IPv6(segment))
                 #segment.show()
                 j+=1
             else: # last fragment
@@ -789,11 +798,6 @@ class frammentizzatore:
         if input_fragments == None:
             self.logs_handler.logger.error("Can not handle header chain of the fragments")
             return input_fragments
-            
-        '''for fragments in input_fragments:
-            for frag in fragments:
-                print("||||||||||||||||||||||||")       
-                frag.show()'''
                 
         fragments_headerchain = self.input_handler.headerchain
         n = 0
@@ -851,7 +855,13 @@ class frammentizzatore:
         
                 elif payload.nh == 58: # icmpv6
                     last_header = 58
-                    payload = payload[ICMPv6EchoRequest]
+                    if ICMPv6EchoRequest in payload:
+                        payload = payload[ICMPv6EchoRequest]
+                    elif ICMPv6EchoReply in payload:
+                        payload = payload[ICMPv6EchoReply]
+                    else:
+                        self.logs_handler.logger.warning("Can not find upper layer payload, returning input fragments")
+                        return input_fragments
             
                 elif payload.nh == 59: # no next header
                     payload = payload.payload

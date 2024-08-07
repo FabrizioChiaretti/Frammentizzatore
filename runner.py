@@ -1,9 +1,9 @@
 
-from itertools import permutations
 from netfilterqueue import NetfilterQueue
 import platform
 from FirewallHandler import FirewallHandler
 from log import log
+from sender import sender
 from input_handler import inputHandler
 from frammentizzatore import frammentizzatore
 from scapy.all import send, sr, sr1, TCP
@@ -12,31 +12,11 @@ from time import sleep
 logs_handler = None
 input_handler = None
 frammentatore = None
+sender_obj = None
 
-def sendFragments(fragments):
-    if fragments != None:
-        k = 0
-        while k < len(fragments):
-            i = 0
-            while i < len(fragments[k]):
-                logs_handler.logger.info("\n########## FRAGMENT %d ##########", i+1)
-                fragments[k][i].show()
-                i+=1
-            k += 1
-            
-    '''for frag in fragments:
-        p = list(permutations(frag))
-        for permutation in p:
-            permutation = list(permutation)
-            send(permutation)'''
-          
-    for frag in fragments:
-        send(frag)
-        
-    logs_handler.logger.info("Fragments sent")
-    return
 
 def traffic_handler(packet):
+    
     logs_handler.logger.info("Traffic intercepted")
     fragments = frammentatore.fragmentation(packet)
     
@@ -47,7 +27,7 @@ def traffic_handler(packet):
     
     packet.drop()
     #packet.accept()
-    sendFragments(fragments)
+    sender_obj.sendFragments(fragments)
 
     return
 
@@ -83,6 +63,9 @@ def main():
     
     global frammentatore
     frammentatore = frammentizzatore(logs_handler, input_handler)
+    
+    global sender_obj
+    sender_obj = sender(logs_handler)
     
     firewall_handler = setFirewallRules(logs_handler, input_handler.protocol, input_handler.ipv6Dest, input_handler.dstPort)
     logs_handler.logger.info("Firewall rules set")
