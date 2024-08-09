@@ -42,10 +42,10 @@ class FirewallHandler:
             self.args[0] = self.args[0] + (["-p", self.protocol])
             if self.protocol == "icmpv6":
                 new_arg1 = self.args[0].copy() + (["--icmpv6-type", "echo-request"])
-                new_arg2 = self.args[0].copy() + (["--icmpv6-type", "echo-reply"])
+                #new_arg2 = self.args[0].copy() + (["--icmpv6-type", "echo-reply"])
                 self.args = []
                 self.args.append(new_arg1)
-                self.args.append(new_arg2)
+                #self.args.append(new_arg2)
         
         if self.dstPort >= 0: 
             self.args[0] = self.args[0] + (["--dport", str(self.dstPort)])

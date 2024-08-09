@@ -42,8 +42,8 @@ class sender:
         
         
     def sendFragments(self, fragments):
-        
-        fragments = [fragments[0]]
+
+        #fragments = [fragments[0]]
         if fragments != None:
             k = 0
             while k < len(fragments):
@@ -55,6 +55,10 @@ class sender:
                 k += 1
         
         overlapping = self.__check_overlapping(fragments[0])
+        
+        '''for frag in fragments:
+            send(frag)
+        return'''
         
         if overlapping:
             self.logs_handler.logger.info("Fragments overlap")
