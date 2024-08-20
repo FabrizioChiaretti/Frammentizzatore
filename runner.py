@@ -32,12 +32,12 @@ def traffic_handler(packet):
     return
 
 
-def setFirewallRules(logs_handler, protocol = "", dest_ipv6addr="", dstPort = ""):
+def setFirewallRules(logs_handler, table = "", chain = "", protocol = "", dest_ipv6addr="", dstPort = ""):
     
     os_type = platform.system().lower()
 
     logs_handler.logger.info("Inserting firewall rules...")
-    firewall_handler = FirewallHandler(os_type, logs_handler, protocol, dest_ipv6addr, dstPort)
+    firewall_handler = FirewallHandler(os_type, logs_handler, table, chain, protocol, dest_ipv6addr, dstPort)
     firewall_handler.insert_firewall_rules()
 
     return firewall_handler
@@ -67,7 +67,7 @@ def main():
     global sender_obj
     sender_obj = sender(logs_handler)
     
-    firewall_handler = setFirewallRules(logs_handler, input_handler.protocol, input_handler.ipv6Dest, input_handler.dstPort)
+    firewall_handler = setFirewallRules(logs_handler, input_handler.table, input_handler.chain, input_handler.protocol, input_handler.ipv6Dest, input_handler.dstPort)
     logs_handler.logger.info("Firewall rules set")
 
     nfqueue = NetfilterQueue()

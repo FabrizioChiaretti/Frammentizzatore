@@ -9,6 +9,8 @@ class inputHandler:
         
         self.file = file
         self.logs_handler = logs_handler
+        self.table = ""
+        self.chain = ""
         self.protocol = ""    
         self.dstPort = ""
         self.ipv6Dest = "" 
@@ -25,7 +27,7 @@ class inputHandler:
 
     def header_value(self, name):
         
-        res = ""
+        res = None
         
         if name == "hopbyhop":
             res = 0
@@ -47,8 +49,6 @@ class inputHandler:
             res = 6
         if name == "udp":
             res = 17
-        if name == "nonextheader":
-            res = 59
         
         return res
    
@@ -61,6 +61,41 @@ class inputHandler:
             self.logs_handler.logger.error("json decoding error")
             return False
         keys = obj.keys()
+        
+        # table check
+        if "table" not in keys:
+            self.logs_handler.logger.error("'table' field not found")
+            return False
+        
+        self.table = str(obj["table"]).lower()
+        if self.table != "":
+            if self.table != "mangle" and self.table != "nat" and self.table != "filter":
+                self.logs_handler.logger.error("Invalid table")
+                return False
+        
+        # chain check
+        if "chain" not in keys:
+            self.logs_handler.logger.error("'chain' field not found")
+            return False
+        
+        self.chain = str(obj["chain"]).upper()
+        if self.table == "":
+            self.chain = ""
+            
+        if self.chain == "" and self.table != "":
+            self.logs_handler.logger.error("Invalid chain")
+            return False
+        
+        if self.chain != "": 
+            if self.table == "nat" and (self.chain != "OUTPUT" and self.chain != "POSTROUTING"):
+                self.logs_handler.logger.error("Invalid chain")
+                return False
+            if self.table == "mangle" and (self.chain != "OUTPUT" and self.chain != "POSTROUTING" and self.chain != "FORWARD"):
+                self.logs_handler.logger.error("Invalid chain")
+                return False
+            if self.table == "filter" and (self.chain != "OUTPUT" and self.chain != "FORWARD"):
+                self.logs_handler.logger.error("Invalid chain")
+                return False
         
         # protocol check
         if "protocol" not in keys:
@@ -107,7 +142,7 @@ class inputHandler:
             or obj["type"] == "overlapping-headerchain" or obj["type"] == "regular-headerchain":
             self.type = obj["type"]
         else:
-            self.logs_handler.logger.warning("Invalid fragmentation type")
+            self.logs_handler.logger.error("Invalid fragmentation type")
             return False
         
         # fragment size check   

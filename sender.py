@@ -1,7 +1,7 @@
 
 from scapy.all import send, raw, IPv6ExtHdrFragment
 from itertools import permutations
-
+from time import sleep
 
 class sender:
     
@@ -66,7 +66,9 @@ class sender:
                 p = list(permutations(frag))
                 for permutation in p:
                     permutation = list(permutation)
-                    send(permutation)
+                    for fr in permutation:
+                        send(fr)
+                        sleep(0.002)
         else:
             for frag in fragments:
                 send(frag)

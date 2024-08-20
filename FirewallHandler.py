@@ -4,9 +4,11 @@ import subprocess
 
 class FirewallHandler:
     
-    def __init__(self, os_type, logs_handler, protocol = "", dest_ipv6addr="", dstPort = ""):
+    def __init__(self, os_type, logs_handler, table = "", chain = "", protocol = "", dest_ipv6addr="", dstPort = ""):
         self.os_type = os_type
         self.logs_handler = logs_handler
+        self.table = table
+        self.chain = chain
         self.protocol = protocol
         self.dest_ipv6addr = dest_ipv6addr
         self.dstPort = dstPort
@@ -29,10 +31,14 @@ class FirewallHandler:
             pass
 
 
-
     def _insert_iptables_rules(self):
 
-        arg = ["ip6tables", "-I", "OUTPUT"]
+        arg = ["ip6tables"]
+        if self.table == "":
+            arg = arg + ["-I", "OUTPUT"]
+        else:
+            arg = arg + ["-t", self.table, "-I", self.chain]
+            
         self.args = [arg]
     
         if self.dest_ipv6addr != "":
@@ -72,9 +78,9 @@ class FirewallHandler:
 
     def _delete_iptables_rules(self):
 
-        self.args[0][1] = "-D"
-        if len(self.args) == 2:
-            self.args[1][1] = "-D"
+        for arg in self.args:
+            i = arg.index("-I")
+            arg[i] = "-D"
 
         for arg in self.args:
             rule = ""
