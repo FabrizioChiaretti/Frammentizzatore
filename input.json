@@ -3,7 +3,7 @@
 
 	"chain" : "",
 
-	"protocol": "",
+	"protocol": "tcp",
 	
 	"dstPort": -1,
 
@@ -11,14 +11,14 @@
 	
 	"type":"overlapping-HeaderChain", 
 	
-	"fragmentSize": 72,
+	"fragmentSize": 80,
 
 	"fragments":[
 
-		{"PayloadLenght":8, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
+		{"PayloadLenght":40, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
 		"HeaderChain":[{"hopbyhop":{}}, {"fragment":{}}]},
 
-		{"PayloadLenght":-1, "HopLimit":-1, "FO":8, "M": 0, "indexes":[],
+		{"PayloadLenght":-1, "HopLimit":-1, "FO":40, "M": 0, "indexes":[],
 		"HeaderChain":[{"hopbyhop":{}}, {"fragment":{}}]}
 		
 	]

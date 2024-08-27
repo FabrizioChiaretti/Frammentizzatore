@@ -1,4 +1,5 @@
 from json import load
+from re import match
 from ipaddress import ip_address, IPv6Address 
 from log import log
 
@@ -102,11 +103,24 @@ class inputHandler:
             self.logs_handler.logger.error("'protocol' field not found")
             return False
         
-        obj["protocol"] = str(obj["protocol"]).lower()
-        if obj["protocol"] == "icmpv6" or obj["protocol"] == "tcp" or obj["protocol"] == "udp":
-            self.protocol = obj["protocol"]
+        obj["protocol"] = str(obj["protocol"]).lower().strip()
+        if obj["protocol"] == "":
+            self.protocol = ["tcp", "udp", "icmpv6", "ah", "esp"]
         else:
-            self.logs_handler.logger.warning("protocol not specified")
+            pattern = '[a-zA-Z0-9]*\s*[a-zA-Z0-9]*\s*[a-zA-Z0-9]*\s*[a-zA-Z0-9]*\s*[a-zA-Z0-9]*'
+            m = match(pattern, obj["protocol"])
+            if not m:
+                self.logs_handler.logger.error("Invalid protocol")
+                return False
+            else:
+                protocol = m.group()
+                protocol = " ".join(protocol.split()) 
+                protocol = protocol.split(" ")
+                for proto in protocol:
+                    if proto != "udp" and proto != "tcp" and proto != "icmpv6" and proto != "esp" and proto != "ah":
+                        self.logs_handler.logger.error("Invalid protocol")
+                        return False
+                self.protocol = protocol
         
         #dstPort check
         if "dstPort" not in keys:

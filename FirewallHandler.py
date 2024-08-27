@@ -33,34 +33,46 @@ class FirewallHandler:
 
     def _insert_iptables_rules(self):
 
+        #ip6tables -I OUTPUT -p esp --espspi 0:4294967295
+        #ip6tables -I OUTPUT -m ah --ahspi 0:4294967295
+
         arg = ["ip6tables"]
         if self.table == "":
             arg = arg + ["-I", "OUTPUT"]
         else:
             arg = arg + ["-t", self.table, "-I", self.chain]
-            
-        self.args = [arg]
     
         if self.dest_ipv6addr != "":
-            self.args[0] = self.args[0] + (["-d", self.dest_ipv6addr])
-            
-        if self.protocol != "": 
-            self.args[0] = self.args[0] + (["-p", self.protocol])
-            if self.protocol == "icmpv6":
-                new_arg1 = self.args[0].copy() + (["--icmpv6-type", "echo-request"])
-                #new_arg2 = self.args[0].copy() + (["--icmpv6-type", "echo-reply"])
-                self.args = []
+            arg = arg + (["-d", self.dest_ipv6addr])
+             
+        for protocol in self.protocol:
+            new_arg = arg.copy() 
+            new_arg = new_arg + (["-p", protocol])
+            if protocol == "icmpv6":
+                new_arg1 = new_arg + (["--icmpv6-type", "echo-request"])
+                new_arg2 = new_arg + (["--icmpv6-type", "echo-reply"])
                 self.args.append(new_arg1)
-                #self.args.append(new_arg2)
+                self.args.append(new_arg2)
+            if protocol == "esp":
+                new_arg = new_arg + (["--espspi", "0:4294967295"])
+                self.args.append(new_arg)
+            if protocol == "ah":
+                i = new_arg.index("-p")
+                new_arg[i] = "-m"
+                new_arg = new_arg + (["--ahspi", "0:4294967295"])
+                self.args.append(new_arg)
+            if protocol == "tcp" or protocol == "udp":
+                if self.dstPort > 0:
+                    new_arg = new_arg + (["--dport", str(self.dstPort)])
+                self.args.append(new_arg)
         
-        if self.dstPort >= 0: 
-            self.args[0] = self.args[0] + (["--dport", str(self.dstPort)])
-        
-        self.args[0] = self.args[0] + (["-j", "NFQUEUE", "--queue-num", str(1)])
-        if len(self.args) == 2:
-            self.args[1] = self.args[1] + (["-j", "NFQUEUE", "--queue-num", str(1)])
-        
+        k = 0
+        while k < len(self.args):
+            self.args[k] = self.args[k] + (["-j", "NFQUEUE", "--queue-num", str(1)])
+            k += 1
+            
         for arg in self.args:
+            #print(arg)
             rule = ""
             for s in arg:
                 rule = rule + s + " "

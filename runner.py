@@ -26,9 +26,9 @@ def traffic_handler(packet):
         return
     
     packet.drop()
-    #packet.accept()
     sender_obj.sendFragments(fragments)
 
+    #packet.accept()
     return
 
 
@@ -77,7 +77,7 @@ def main():
     try:
          nfqueue.run()
     except KeyboardInterrupt:
-        logs_handler.logger.info("Frammentizzatore Stopped")
+        logs_handler.logger.info("Stopped")
     finally:
         logs_handler.logger.info("Deleting firewall rules")
         firewall_handler.delete_firewall_rules()

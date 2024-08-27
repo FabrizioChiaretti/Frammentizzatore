@@ -57,7 +57,6 @@ class frammentizzatore:
             frame = pkt[TCP]
             if len(raw(frame.payload)) == 0:
                 res = self.fragment(packet, self.max_fragment_lenght)
-                res = [res]
                 return res
         
         if "regular" in self.input_handler.type:
