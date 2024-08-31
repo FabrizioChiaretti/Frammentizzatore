@@ -3,23 +3,22 @@
 
 	"chain" : "",
 
-	"protocol": "tcp",
+	"protocol": "",
 	
 	"dstPort": -1,
 
-	"ipv6Dest":"", 
+	"ipv6Dest":"2600::", 
 	
-	"type":"overlapping-HeaderChain", 
+	"type":"overlapping", 
 	
 	"fragmentSize": 80,
 
 	"fragments":[
 
-		{"PayloadLenght":40, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
-		"HeaderChain":[{"hopbyhop":{}}, {"fragment":{}}]},
+		{"PayloadLenght":100, "HopLimit":-1, "FO":48, "M": 0, "indexes":[],
+		"HeaderChain":[]},
 
-		{"PayloadLenght":-1, "HopLimit":-1, "FO":40, "M": 0, "indexes":[],
-		"HeaderChain":[{"hopbyhop":{}}, {"fragment":{}}]}
-		
+		{"PayloadLenght":48, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
+		"HeaderChain":[{"fragment":{}}, {"ah":{}}]}
 	]
 }

@@ -215,6 +215,9 @@ class inputHandler:
                 if type(frag["M"]) != int or (frag["M"] != 0 and frag["M"] != 1):
                     self.logs_handler.logger.error("'M' must be either 0 or 1 in fragment %d ", k)
                     return False
+                if frag["PayloadLenght"] % 8 != 0 and frag["M"] != 0:
+                    self.logs_handler.logger.error("'PayloadLenght' must be a positive integer and a multiple number of 8 in fragment %d ", k)
+                    return False
                 
                 # indexes check
                 if "indexes" not in frag_keys:
