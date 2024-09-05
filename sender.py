@@ -41,7 +41,7 @@ class sender:
         return False
         
         
-    def sendFragments(self, fragments):
+    def sendFragments(self, fragments, singleTest):
 
         #fragments = [fragments[0]]
         if fragments != None:
@@ -54,24 +54,24 @@ class sender:
                     i+=1
                 k += 1
         
-        overlapping = self.__check_overlapping(fragments[0])
-        
-        '''for frag in fragments:
-            send(frag)
-        return'''
-        
-        if overlapping:
-            self.logs_handler.logger.info("Fragments overlap")
-            for frag in fragments:
-                p = list(permutations(frag))
-                for permutation in p:
-                    permutation = list(permutation)
-                    for fr in permutation:
-                        send(fr)
-                        sleep(0.002)
-        else:
+        if singleTest == 1:
+            self.logs_handler.logger.info("Single test")
             for frag in fragments:
                 send(frag)
+        else:
+            overlapping = self.__check_overlapping(fragments[0])
+            if overlapping:
+                self.logs_handler.logger.info("Fragments overlap")
+                for frag in fragments:
+                    p = list(permutations(frag))
+                    for permutation in p:
+                        permutation = list(permutation)
+                        for fr in permutation:
+                            send(fr)
+                            sleep(0.002)
+            else:
+                for frag in fragments:
+                    send(frag)
         
         self.logs_handler.logger.info("Fragments sent")
         return

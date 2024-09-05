@@ -26,7 +26,7 @@ def traffic_handler(packet):
         return
     
     packet.drop()
-    sender_obj.sendFragments(fragments)
+    sender_obj.sendFragments(fragments, input_handler.singleTest)
 
     #packet.accept()
     return

@@ -16,6 +16,7 @@ class inputHandler:
         self.dstPort = ""
         self.ipv6Dest = "" 
         self.type = "regular" 
+        self.singleTest = 0
         self.fragmentSize = 1280
         self.fragments = None
         self.headerchain = []
@@ -105,7 +106,7 @@ class inputHandler:
         
         obj["protocol"] = str(obj["protocol"]).lower().strip()
         if obj["protocol"] == "":
-            self.protocol = ["tcp", "udp", "icmpv6", "ah", "esp"]
+            self.protocol = ["tcp", "udp", "icmpv6"]
         else:
             pattern = '[a-zA-Z0-9]*\s*[a-zA-Z0-9]*\s*[a-zA-Z0-9]*\s*[a-zA-Z0-9]*\s*[a-zA-Z0-9]*'
             m = match(pattern, obj["protocol"])
@@ -159,6 +160,19 @@ class inputHandler:
             self.logs_handler.logger.error("Invalid fragmentation type")
             return False
         
+        # singleTest check
+        if "singleTest" not in keys:
+            self.logs_handler.logger.error("'singleTest' field not found in input.json")
+            return False
+        
+        if "overlapping" in self.type:
+            if type(obj["singleTest"]) != int or (obj["singleTest"] != 0 and obj["singleTest"] != 1):
+                self.logs_handler.logger.error("'singleTest' field must be 0 or 1 in input.json")
+                return False
+            self.singleTest = obj["singleTest"]
+        else:
+            self.singleTest = 1
+        
         # fragment size check   
         if "fragmentSize" not in keys:
             self.logs_handler.logger.error("'fragmentSize' field not found in input.json")
@@ -175,8 +189,8 @@ class inputHandler:
             self.logs_handler.logger.error("'fragments' field not found in input.json")
             return False
         
-        if type(obj["fragments"]) != list:
-            self.logs_handler.logger.error("fragments filed must be a list")
+        if type(obj["fragments"]) != list or len(obj["fragments"]) == 0:
+            self.logs_handler.logger.error("fragments filed must be a non-empty list")
             return False
         
         fragments = obj["fragments"]
@@ -208,6 +222,9 @@ class inputHandler:
                 if type(frag["FO"]) != int or frag["FO"] < 0:
                     self.logs_handler.logger.error("'FO' must be a positive integer in fragment %d ", k)
                     return False
+                if frag["FO"] % 8 != 0:
+                    self.logs_handler.logger.error("'FO' must be a positive integer and a multiple number of 8 in fragment %d ", k)
+                    return False
                 
                 if "M" not in frag_keys:
                     self.logs_handler.logger.error("'M' field misses in fragment %d ", k)
@@ -215,7 +232,7 @@ class inputHandler:
                 if type(frag["M"]) != int or (frag["M"] != 0 and frag["M"] != 1):
                     self.logs_handler.logger.error("'M' must be either 0 or 1 in fragment %d ", k)
                     return False
-                if frag["PayloadLenght"] % 8 != 0 and frag["M"] != 0:
+                if (frag["PayloadLenght"] % 8 != 0 and frag["M"] == 1) or (frag["PayloadLenght"] < 0 and frag["M"] == 1):
                     self.logs_handler.logger.error("'PayloadLenght' must be a positive integer and a multiple number of 8 in fragment %d ", k)
                     return False
                 

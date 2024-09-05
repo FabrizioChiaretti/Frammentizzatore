@@ -3,22 +3,21 @@
 
 	"chain" : "",
 
-	"protocol": "",
+	"protocol": "ah",
 	
 	"dstPort": -1,
 
-	"ipv6Dest":"2600::", 
+	"ipv6Dest":"", 
 	
-	"type":"overlapping", 
+	"type":"overlapping-HeaderChain", 
+
+	"singleTest": 0,
 	
-	"fragmentSize": 80,
+	"fragmentSize": 104,
 
 	"fragments":[
 
-		{"PayloadLenght":100, "HopLimit":-1, "FO":48, "M": 0, "indexes":[],
-		"HeaderChain":[]},
-
-		{"PayloadLenght":48, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
-		"HeaderChain":[{"fragment":{}}, {"ah":{}}]}
+		{"PayloadLenght":-1, "HopLimit":-1, "FO":0, "M": 0, "indexes":[],
+		"HeaderChain":[{"ah":{}}]}
 	]
 }
