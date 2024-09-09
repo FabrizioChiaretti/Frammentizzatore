@@ -3,13 +3,13 @@
 
 	"chain" : "",
 
-	"protocol": "ah",
+	"protocol": "tcp udp",
 	
-	"dstPort": -1,
+	"dstPort": 6000,
 
-	"ipv6Dest":"", 
+	"ipv6Dest":"2600::", 
 	
-	"type":"overlapping-HeaderChain", 
+	"type":"regular", 
 
 	"singleTest": 0,
 	
@@ -18,6 +18,7 @@
 	"fragments":[
 
 		{"PayloadLenght":-1, "HopLimit":-1, "FO":0, "M": 0, "indexes":[],
-		"HeaderChain":[{"ah":{}}]}
+		"HeaderChain":[{"Hopbyhop":{}}, {"Routing":{}}, {"Destination":{}}, {"Fragment":{}}]}
+	
 	]
 }
