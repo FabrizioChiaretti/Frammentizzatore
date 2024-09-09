@@ -39,30 +39,30 @@ sudo -E python3 runner.py
 
 When the tool is runnning info logs are shown on command line
 
-![Screenshot 2024-09-07 160112](https://github.com/user-attachments/assets/da357795-f9e5-4deb-96e2-162f497d1a7d)
+![Screenshot 2024-09-09 105941](https://github.com/user-attachments/assets/8104b783-ea84-4422-8f7e-cff54010d92e)
 
 Type **Ctrl**`+`**c**  for stopping the program 
 
-![Screenshot 2024-09-07 160129](https://github.com/user-attachments/assets/93150d64-9105-4d11-b439-5bf899d3fe01)
+![Screenshot 2024-09-09 110024](https://github.com/user-attachments/assets/8e8a05b9-5dfa-41a7-9fc9-a4a380bf6b06)
 
 ## Usage
 The tool can be configured by filling the records of the **input.json** file. The following records define when, how and which IPv6 packets are intercepted and processed by the program:  
 
 - **table**  
 MANGLE  
-FILTER
+FILTER  
 Empty string stands for FILTER (default)
 - **chain**  
 POSTROUTING/OUTPUT for mangle table  
 OUTPUT for filter table 
 - **protocol**  
-TCP UDP ICMPv6 ESP AH  (any combination)
+TCP UDP ICMPv6 ESP AH  (any combination)  
 Empty string stands for TCP UDP ICMPv6 (default)
 - **dstPort**  
 Integer number between 0-65535 when protocol is either TCP or UDP or both  
 Negative number stands for any port (default)  
 - **ipv6Dest**  
-IPv6 address of the receiver of the packets
+IPv6 address of the receiver of the packets  
 Empty string stands for any IPv6 address (default)
 
 According to the values of the above records, new rules are added on the **ip6tables** module of the Linux kernel and all the packets matching one of these rules are manipulated by the tool.  
