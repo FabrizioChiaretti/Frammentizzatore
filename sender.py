@@ -66,9 +66,10 @@ class sender:
                     p = list(permutations(frag))
                     for permutation in p:
                         permutation = list(permutation)
-                        for fr in permutation:
+                        send(permutation)
+                        '''for fr in permutation:
                             send(fr)
-                            sleep(0.002)
+                            sleep(0.002)'''
             else:
                 for frag in fragments:
                     send(frag)

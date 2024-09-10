@@ -3,22 +3,40 @@
 
 	"chain" : "",
 
-	"protocol": "tcp udp",
+	"protocol": "",
 	
-	"dstPort": 6000,
+	"dstPort": -1,
 
-	"ipv6Dest":"2600::", 
+	"ipv6Dest":"2001:b07:a70:8773:fd6e:37c0:d49f:9261", 
 	
-	"type":"regular", 
+	"type":"overlapping", 
 
-	"singleTest": 0,
+	"singleTest": 1,
 	
-	"fragmentSize": 104,
+	"fragmentSize": 56,
 
 	"fragments":[
 
-		{"PayloadLenght":-1, "HopLimit":-1, "FO":0, "M": 0, "indexes":[],
-		"HeaderChain":[{"Hopbyhop":{}}, {"Routing":{}}, {"Destination":{}}, {"Fragment":{}}]}
+		{"PayloadLenght":104, "HopLimit":-1, "FO":0, "M": 1, "indexes":[],
+		"HeaderChain":[]},
 	
+		{"PayloadLenght":10, "HopLimit":-1, "FO":104, "M": 0, "indexes":[],
+		"HeaderChain":[]},
+
+		{"PayloadLenght":20, "HopLimit":-1, "FO":104, "M": 0, "indexes":[],
+		"HeaderChain":[]},
+
+		{"PayloadLenght":30, "HopLimit":-1, "FO":104, "M": 0, "indexes":[],
+		"HeaderChain":[]},
+
+		{"PayloadLenght":40, "HopLimit":-1, "FO":104, "M": 0, "indexes":[],
+		"HeaderChain":[]},
+
+		{"PayloadLenght":50, "HopLimit":-1, "FO":104, "M": 0, "indexes":[],
+		"HeaderChain":[]},
+
+		{"PayloadLenght":60, "HopLimit":-1, "FO":104, "M": 0, "indexes":[],
+		"HeaderChain":[]}
+
 	]
 }
