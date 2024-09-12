@@ -223,8 +223,7 @@ class frammentizzatore:
                         
             i+=1
         
-        #self.logs_handler.logger.info("len = %d", len(final_packets))
-        final_packets = final_packets + aux
+        final_packets = aux
         i = 0
         while i < len(final_packets):
             final_packets[i] = IPv6(final_packets[i])
