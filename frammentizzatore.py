@@ -1,4 +1,4 @@
-from scapy.all import hexdump, fuzz, IPv6, IPv6ExtHdrFragment, IPv6ExtHdrDestOpt, IPv6ExtHdrHopByHop, IPv6ExtHdrRouting, AH, ESP, MIP6MH_BRR, PadN, TCP, UDP, ICMPv6EchoRequest, ICMPv6EchoReply, raw, Packet, in6_chksum
+from scapy.all import hexdump, fuzz, IPv6, IPv6ExtHdrFragment, IPv6ExtHdrDestOpt, IPv6ExtHdrHopByHop, IPv6ExtHdrRouting, AH, ESP, MIP6MH_BRR, PadN, TCP, UDP, ICMPv6EchoRequest, ICMPv6EchoReply, raw, Packet, Raw, in6_chksum
 from random import getrandbits
 from scapy.config import conf
 from random import randint
@@ -228,8 +228,8 @@ class frammentizzatore:
         while i < len(final_packets):
             final_packets[i] = IPv6(final_packets[i])
             final_packets[i].plen = len(raw(final_packets[i].payload))
-            #print("!!!!!!!!!!!!!!!!")
             #final_packets[i].show()
+            #sleep(5)
             i += 1
         
         #print(sequences) 
@@ -245,7 +245,7 @@ class frammentizzatore:
         else:
             packet = IPv6(input_packet.get_payload())
         #packet.show()
-        
+
         # take the basic header
         basic_header = packet.copy()
         basic_header.remove_payload()
@@ -426,8 +426,10 @@ class frammentizzatore:
                 fragHeader.offset = frag["FO"]  // 8
                 fragHeader.m = frag["M"]
                 segment = UnfragPart / fragHeader / raw_payload
+                #new_payload = b'A'*len(raw_payload)
+                #new_payload = Raw(new_payload)
+                #prova = UnfragPart / fragHeader / new_payload
                 segment.plen = len(raw(segment.payload))
-                
                 if frag["HopLimit"] >= 0:
                     segment.hlim = frag["HopLimit"]
                 
@@ -436,8 +438,22 @@ class frammentizzatore:
                     return None
                 
                 segment = IPv6(segment)
-                #print("!!!!!!!!!!!!!!" + str(j+1))
-                #segment.show()
+            
+                if (ICMPv6EchoRequest in packet or ICMPv6EchoReply in packet) and frag["payload"] != "":
+                    if ICMPv6EchoRequest in segment:
+                        payload = segment[ICMPv6EchoRequest]
+                        if payload.data != "":
+                            payload.data = frag["payload"]*(len(raw(segment[ICMPv6EchoRequest])) - 8)
+                    elif  ICMPv6EchoReply in segment:
+                        payload = segment[ICMPv6EchoReply]
+                        if payload.data != "":
+                            payload.data = frag["payload"]*(len(raw(segment[ICMPv6EchoReply])) - 8)
+                    else:
+                        if segment[IPv6ExtHdrFragment].nh == 59 and len(raw(segment[IPv6ExtHdrFragment].payload)) > 0:
+                            segment = UnfragPart / fragHeader / bytes(Raw(frag["payload"]*(len(segment[IPv6ExtHdrFragment].payload))))
+
+                    segment.plen = len(raw(segment.payload))
+                    
                 '''aux = segment
                 while aux:
                     #aux.show()
@@ -448,9 +464,8 @@ class frammentizzatore:
                     aux = aux.payload'''
                     
                 res.append(segment)
-                
-                #self.logs_handler.logger.debug("######################## segment %d", j+1)
                 #segment.show()
+                
             else: # something goes wrong
                 self.logs_handler.logger.error("Something goes wrong while creating fragment %d, check payload lenght and fragment offset inserted", j+1)
                 return None
@@ -461,6 +476,7 @@ class frammentizzatore:
         #    frag.show()
         
         original_fragments = res.copy()
+        #original_fragments[3][IPv6ExtHdrFragment].id += 1
         aux = res.copy()
         first_fragments = []
         k = 0

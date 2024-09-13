@@ -53,6 +53,7 @@ class sender:
                     fragments[k][i].show()
                     i+=1
                 k += 1
+                #sleep(10)
         
         if singleTest == 1:
             self.logs_handler.logger.info("Single test")

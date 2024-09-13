@@ -252,7 +252,22 @@ class inputHandler:
                 if len(frag["indexes"]) == 2 and (frag["indexes"][1] > 0 and frag["PayloadLenght"] > 0) and (frag["indexes"][1] - frag["indexes"][0] != frag["PayloadLenght"]):
                     self.logs_handler.logger.error("Invalid indexes and PayloadLeght in fragment %d", k)
                     return False
-                    
+                
+                # payload check
+                if "payload" not in frag_keys:
+                    self.logs_handler.logger.error("'payload' field misses in fragment %d", k)
+                    return False
+                if type(frag["payload"]) != str or len(frag["payload"]) > 1:
+                    self.logs_handler.logger.error("'payload' must be a string containing one letter %d", k)
+                    return False
+                if len(frag["payload"]) == 1:
+                    frag["payload"] = frag["payload"].upper()
+                    expected_digit = "[A-Z]"
+                    m = match(expected_digit, frag["payload"])
+                    if not m:
+                        self.logs_handler.logger.error("Invalid payload in fragment %d", k)
+                        return False
+
                 k+=1
             
         self.fragments = fragments
@@ -349,8 +364,8 @@ class inputHandler:
             self.logs_handler.logger.info("singleTest=%d", self.singleTest)
             k = 1
             for frag in self.fragments:
-                self.logs_handler.logger.info("Fragment %d\nPayloadLenght=%d, HopLimit=%d, FO=%d, M=%d, indexes=%s", \
-                    k, frag["PayloadLenght"], frag["HopLimit"], frag["FO"], frag["M"], frag["indexes"])
+                self.logs_handler.logger.info("Fragment %d\nPayloadLenght=%d, HopLimit=%d, FO=%d, M=%d, indexes=%s, payload=%s", \
+                    k, frag["PayloadLenght"], frag["HopLimit"], frag["FO"], frag["M"], frag["indexes"], frag["payload"])
                 k+=1
         
         if "headerchain" in self.type:
