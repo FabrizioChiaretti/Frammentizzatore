@@ -19,12 +19,15 @@ class inputHandler:
         self.singleTest = 0
         self.fragmentSize = 1280
         self.fragments = None
-        self.headerchain = []
+        self.tcp_handshake_headerchain = []
+        self.fragments_headerchain = []
         self.udp_sport = None
         self.udp_dport = None
         self.tcp_sport = None
         self.tcp_dport = None
         self.tcp_flags = None
+        self.icmpv6_id = None
+        self.icmpv6_seq = None
 
 
     def header_value(self, name):
@@ -182,9 +185,17 @@ class inputHandler:
             else:
                 self.logs_handler.logger.warning("fragmentSize not specified, default is 1280")
         
-        # fragments check
         if "fragments" not in keys:
             self.logs_handler.logger.error("'fragments' field not found in input.json")
+            return False
+        
+        # tcp_handshake_headerchain check
+        if "tcp_handshake_headerchain" not in keys:
+            self.logs_handler.logger.error("'tcp_handshake_headerchain' field not found in input.json")
+            return False
+        
+        if type(obj["tcp_handshake_headerchain"]) != list:
+            self.logs_handler.logger.error("'tcp_handshake_headerchain' field must be a list in input.json")
             return False
         
         if "overlapping" in self.type or "headerchain" in self.type:
@@ -192,6 +203,7 @@ class inputHandler:
                 self.logs_handler.logger.error("fragments filed must be a non-empty list")
                 return False
         
+        # fragments check
         fragments = obj["fragments"]
         if "overlapping" in self.type:
             k = 1
@@ -272,8 +284,18 @@ class inputHandler:
             
         self.fragments = fragments
 
-        fragments_headerchain = []
+        fragments_printable_headers = []
         if "headerchain" in self.type:
+            if "tcp" in self.protocol:
+                tcp_handshake_headerchain = obj["tcp_handshake_headerchain"]
+                for elem in tcp_handshake_headerchain:
+                    header = list(elem.keys())
+                    header = header[0]
+                    nh = list(elem.values())
+                    nh = nh[0]
+                    header_value = self.header_value(header)
+                    self.tcp_handshake_headerchain.append([[header_value, nh]])
+                
             k = 1
             for frag in self.fragments:
                 frag_keys = frag.keys()
@@ -284,17 +306,28 @@ class inputHandler:
                     self.logs_handler.logger.error("'HeaderChain' field must be a list in fragment %d ", k)
                     return False
                 headers = []
-                fragment_headerchain = []
+                printable_headers = []
                 for header in frag["HeaderChain"]:
                     if type(header) == str and header.lower() == "payload":
                         headers.append(header.lower())
-                        fragment_headerchain.append(header.lower())
+                        printable_headers.append(header.lower())
                     elif type(header) == dict:
                         key = list(header.keys())
-                        if len(key) != 1 or key[0].lower() not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility", "tcp", "udp"]:
-                            self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
+                        key = key[0].lower()
+                        nh = None
+                        if key not in ["tcp", "udp", "icmpv6", "esp"]:
+                            nh = list(header.values())
+                            nh = nh[0]
+                        else:
+                            nh = -1
+                            
+                        if nh not in [0, 60, 43, 44, 50, 51, 135, 6, 17, 58, 59, -1]:
+                            self.logs_handler.logger.error("Invalid next header value in fragment %d ", k)
                             return False
-                        if key[0].lower() == "udp" and len(header["udp"]) > 0 and len(header["udp"]) <= 2:
+                        if key not in ["hopbyhop", "destination", "routing", "ah", "esp", "fragment", "mobility", "tcp", "udp", "icmpv6"]:
+                            self.logs_handler.logger.error("Invalid extension header in fragment %d ", k)
+                            return False
+                        if key == "udp" and len(header["udp"]) > 0 and len(header["udp"]) <= 2:
                                if "sport" in header["udp"]:
                                 sport = header["udp"]["sport"]
                                 if type(sport) != int or sport < 0 or sport > 65535:
@@ -309,7 +342,7 @@ class inputHandler:
                                     return False
                                 self.udp_dport = dport
                         
-                        if key[0].lower() == "tcp" and len(header["tcp"]) > 0 and len(header["tcp"]) <= 3:
+                        if key == "tcp" and len(header["tcp"]) > 0 and len(header["tcp"]) <= 3:
                             if "sport" in header["tcp"]:
                                 sport = header["tcp"]["sport"]
                                 if type(sport) != int or sport < 0 or sport > 65535:
@@ -331,22 +364,33 @@ class inputHandler:
                                     return False
                                 for flag in flags:
                                     if flag not in "FSRPAUEC":
-                                        self.logs_handler.logger.error("Unknown tcp flag in fragment %d, only F S R P A U E C are known", k)
+                                        self.logs_handler.logger.error("Unknown tcp flags in fragment %d, supported flags are FSRPAUEC", k)
                                         return False
                                 self.tcp_flags = flags
-                                      
-                        header_value = self.header_value(key[0].lower())
-                        headers.append(header_value)
-                        fragment_headerchain.append(key[0].lower())
+                        
+                        if key == "icmpv6" and len(header["icmpv6"]) > 0 and len(header["icmpv6"]) <= 2:
+                            if "id" in header["icmpv6"]:
+                                id = header["icmpv6"]["id"]  
+                                if type(id) != int or id < 0 or id > 65535:
+                                    self.logs_handler.logger.error("icmpv6 id must be an integer between [0, 65535] in fragment %d ", k)
+                                    return False
+                                self.icmpv6_id = id  
+                            if "seq" in header["icmpv6"]:
+                                seq = header["icmpv6"]["seq"]  
+                                if type(seq) != int or seq < 0 or seq > 65535:
+                                    self.logs_handler.logger.error("icmpv6 seq must be an integer between [0, 65535] in fragment %d ", k)
+                                    return False
+                                self.icmpv6_seq = seq  
+                                
+                        header_value = self.header_value(key)
+                        headers.append([header_value, nh])
+                        printable_headers.append([key, nh])
                     else:
                         self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
                         return False
-                self.headerchain.append(headers)
-                fragments_headerchain.append(fragment_headerchain)
+                self.fragments_headerchain.append(headers)
+                fragments_printable_headers.append(printable_headers)
                 k += 1
-        #print("//////////////////")
-        #print(self.headerchain)
-        #print(self.udp_sport, self.udp_dport)
         
         if self.dstPort < 0:
             self.logs_handler.logger.info("table=%s, chain=%s, protocol=%s, dstPort=%s, ipv6Dest=%s, type=%s", \
@@ -369,8 +413,10 @@ class inputHandler:
                 k+=1
         
         if "headerchain" in self.type:
+            if "tcp" in self.protocol and len(self.tcp_handshake_headerchain) > 0:
+                self.logs_handler.logger.info("Headerchain of tcp handshake packets \n%s", self.tcp_handshake_headerchain)
             k = 1
-            for chain in fragments_headerchain:
+            for chain in fragments_printable_headers:
                 self.logs_handler.logger.info("Headerchain of fragment %d\n%s", k, chain)
                 k += 1
     
