@@ -3,13 +3,13 @@
 
 	"chain" : "",
 
-	"protocol": "icmpv6",
+	"protocol": "icmpv6 tcp",
 	
 	"dstPort": -1,
 
 	"ipv6Dest":"", 
 	
-	"type":"overlapping-HeaderChain", 
+	"type":"HeaderChain", 
 	
 	"fragmentSize": 56,
 
@@ -19,17 +19,8 @@
 
 	"fragments":[
 
-		{"src":-1, "dst": -1, "len":-1, "HopLimit":-1, "PayloadLenght":96, "FO":0, "M": 1, "indexes":[], "payload":"", 
-		"HeaderChain":[{"fragment": -1}, {"destination": -1}]},
-
-		{"src":-1, "dst": -1, "len":-1, "HopLimit":-1, "PayloadLenght":16, "FO":96, "M": 1, "indexes":[], "payload":"", 
-		"HeaderChain":[{"fragment": -1}]},
-
-		{"src":-1, "dst": -1, "len":-1, "HopLimit":-1, "PayloadLenght":16, "FO":112, "M": 1, "indexes":[], "payload":"", 
-		"HeaderChain":[{"fragment": -1}]},
-
-		{"src":-1, "dst": -1, "len":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":128, "M": 0, "indexes":[], "payload":"", 
-		"HeaderChain":[{"fragment": -1}]}
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":16, "FO":0, "M": 0, "indexes":[], "payload":"",
+		"HeaderChain":[{"fragment": -1}, {"fragment": -1}]}
 
 	]
 

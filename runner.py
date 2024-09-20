@@ -6,7 +6,6 @@ from log import log
 from sender import sender
 from input_handler import inputHandler
 from frammentizzatore import frammentizzatore
-from scapy.all import send, sr, sr1, TCP
 from time import sleep
 
 logs_handler = None

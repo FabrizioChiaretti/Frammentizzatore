@@ -1,7 +1,7 @@
-from scapy.all import hexdump, fuzz, IPv6, IPv6ExtHdrFragment, IPv6ExtHdrDestOpt, IPv6ExtHdrHopByHop, IPv6ExtHdrRouting, AH, ESP, MIP6MH_BRR, PadN, TCP, UDP, ICMPv6EchoRequest, ICMPv6EchoReply, raw, Packet, Raw, in6_chksum
+
+from scapy.all import IPv6, IPv6ExtHdrFragment, IPv6ExtHdrDestOpt, IPv6ExtHdrHopByHop, IPv6ExtHdrRouting, AH, ESP, PadN, TCP, UDP, ICMPv6EchoRequest, ICMPv6EchoReply, raw, Packet, Raw
 from random import getrandbits
 from scapy.config import conf
-from random import randint
 from time import sleep
 
 
@@ -44,18 +44,6 @@ class frammentizzatore:
             return new_packet
                     
         return packet
-    
-    
-    '''def _get_layers(self, packet):
-        layers = []
-        counter = 0
-        while True:
-            layer = packet.getlayer(counter)
-            if layer is None:
-                break
-            layers.append(layer.name.lower().strip().replace("-", ""))
-            counter += 1  
-        return layers'''
     
     
     def fragmentation(self, packet):  
@@ -183,6 +171,15 @@ class frammentizzatore:
         
         aux = []
         final_packets = []
+        new_plen = 0
+        for frag in fragments:
+            if frag[IPv6ExtHdrFragment].offset == 0:
+                if frag.src != basic_header.src:
+                    basic_header.src = frag.src
+                if frag.dst != basic_header.dst:
+                    basic_header.dst = frag.dst
+            new_plen += frag.plen - 8
+                
         final_packets.append(basic_header)
         i = 0
         #sequences = []
@@ -234,8 +231,12 @@ class frammentizzatore:
         i = 0
         while i < len(final_packets):
             final_packets[i] = IPv6(final_packets[i])
-            final_packets[i].plen = len(raw(final_packets[i].payload))
+            if fragments[0].plen != len(raw(fragments[0].payload)):
+                final_packets[i].plen = new_plen
+            else:
+                final_packets[i].plen = len(raw(final_packets[i].payload))
             #final_packets[i].show()
+            #print(final_packets[i].plen, new_plen)
             #sleep(5)
             i += 1
         
@@ -459,7 +460,15 @@ class frammentizzatore:
                         if segment[IPv6ExtHdrFragment].nh == 59 and len(raw(segment[IPv6ExtHdrFragment].payload)) > 0:
                             segment = UnfragPart / fragHeader / bytes(Raw(frag["payload"]*(len(segment[IPv6ExtHdrFragment].payload))))
 
+                if frag["plen"] < 0:
                     segment.plen = len(raw(segment.payload))
+                else:
+                    segment.plen = frag["plen"]
+                        
+                if frag["src"] != "":
+                    segment.src = frag["src"]
+                if frag["dst"] != "":
+                    segment.dst = frag["dst"]
                     
                 '''aux = segment
                 while aux:
@@ -516,6 +525,7 @@ class frammentizzatore:
             for original_packet in original_packets:
                 original_packet_payload = original_packet
                 #original_packet_payload.show()
+                #sleep(5)
                 while original_packet_payload.nh not in [58, 6, 17, 41, 50]:
                     original_packet_payload = original_packet_payload.payload
                 original_packet_payload = original_packet_payload.payload
@@ -843,6 +853,7 @@ class frammentizzatore:
         header = IPv6ExtHdrDestOpt(len=(2 + opt_len + 7) // 8 - 1, autopad=1, options=pad) # len=(2 + opt_len + 7) // 8 - 1
         #header.len = len(raw(header))
         #self.logs_handler.logger.info("destination len %d", len(raw(header)))
+        #sleep(5)
         #header.show()
         return header
 
@@ -862,15 +873,6 @@ class frammentizzatore:
         #self.logs_handler.logger.info("routing len %d", len(raw(header)))
         #header.show()
         return header
-    
-    
-    '''def _mobility_header(self):
-        opt = "MH"
-        opt_len = len(opt)
-        pad = PadN(otype=1, optlen=opt_len, optdata=opt)
-        header = MIP6MH_BRR(len=1, res=0, cksum=0, res2=0, options=pad)
-        #self.logs_handler.logger.info("Mobility len %d", len(raw(header)))
-        return header'''
     
     
     def _fragment_header(self):
@@ -924,8 +926,8 @@ class frammentizzatore:
                 del res.payload
                 res.show()
                 
-        if header == 135:
-            res = self._mobility_header()
+        '''if header == 135:
+            res = self._mobility_header()'''
                 
         return res
     
@@ -1003,6 +1005,7 @@ class frammentizzatore:
             i = 0
             new_fragments = []
             fragment_header_found = False
+            random_plen = False
             while i < len(fragments_headerchain):
                 headerchain = fragments_headerchain[i]
                 if len(headerchain) > 0:
@@ -1018,6 +1021,8 @@ class frammentizzatore:
                 fragment = input_fragments[n][i]
                 #fragPart.show()
                 #unfragPart.show()
+                if fragment.plen != len(raw(fragment.payload)):
+                    random_plen = True
             
                 basic_header = fragment.copy()
                 basic_header.remove_payload() # new_fragment = basic header of the current fragment
@@ -1179,9 +1184,8 @@ class frammentizzatore:
                                 new_header.nh = last_header    
                             
                         if new_header != None:
-                            '''if header == 44:
-                                new_header.offset = new_header.offset + (new_offset // 8) \
-                                    if IPv6ExtHdrFragment not in new_fragment else new_fragment[IPv6ExtHdrFragment].offset'''
+                            if header == 44 and IPv6ExtHdrFragment in new_fragment:
+                                new_header.id = new_fragment[IPv6ExtHdrFragment].id
                             if header not in fragment_ext_headers and IPv6ExtHdrFragment in new_fragment:
                                 new_offset += len(new_header) 
                             new_fragment = new_fragment / new_header
@@ -1273,9 +1277,8 @@ class frammentizzatore:
                                     new_header.nh = last_header
                            
                             if new_header != None:
-                                '''if header == 44:
-                                    new_header.offset = new_header.offset + (new_offset // 8) \
-                                    if IPv6ExtHdrFragment not in new_fragment else new_fragment[IPv6ExtHdrFragment].offset'''
+                                if header == 44 and IPv6ExtHdrFragment in new_fragment:
+                                    new_header.id = new_fragment[IPv6ExtHdrFragment].id
                                 if header not in fragment_ext_headers and IPv6ExtHdrFragment in new_fragment:
                                     new_offset += len(new_header) if "payload" not in headerchain[:j] else 0
                                 new_fragment = new_fragment / new_header
@@ -1283,15 +1286,9 @@ class frammentizzatore:
                                     queued_headers_len += len(new_header)
                         j+=1
                 
-                new_fragment.plen = len(raw(new_fragment.payload)) - queued_headers_len
-                    
-                '''if MIP6MH_BRR in new_fragment:
-                    aux = new_fragment[MIP6MH_BRR].copy()
-                    del aux.payload
-                    #aux.show()
-                    csum = in6_chksum(135, basic_header, raw(aux))
-                    new_fragment[MIP6MH_BRR].cksum = csum
-                    #new_fragment[MIP6MH_BRR].show()'''
+                if not random_plen:
+                    new_fragment.plen = len(raw(new_fragment.payload)) - queued_headers_len
+                    random_plen = False
 
                 new_fragments.append(new_fragment)
                 i += 1
@@ -1299,7 +1296,7 @@ class frammentizzatore:
             for frag in new_fragments:
                 if frag[IPv6ExtHdrFragment].offset != 0:
                     frag[IPv6ExtHdrFragment].offset = frag[IPv6ExtHdrFragment].offset + (new_offset // 8)
-            
+                    
             new_res.append(new_fragments)
             n += 1
         

@@ -1,3 +1,4 @@
+
 from json import load
 from re import match
 from ipaddress import ip_address, IPv6Address 
@@ -65,14 +66,24 @@ class inputHandler:
         except:
             self.logs_handler.logger.error("json decoding error")
             return False
-        keys = obj.keys()
+        keys = list(obj.keys())
+        keys_len = len(keys)
+        
+        if keys_len > 10:
+            self.logs_handler.logger.error("input.json file contains unexpected fileds")
+            return False
+        elif keys_len < 10:
+            self.logs_handler.logger.error("input.json file does not contain all the expected fileds")
+            return False
         
         # table check
         if "table" not in keys:
             self.logs_handler.logger.error("'table' field not found")
             return False
-        
-        self.table = str(obj["table"]).lower()
+        if type(obj["table"]) != str:
+            self.logs_handler.logger.error("'table' must be a string in input.json")
+            return False
+        self.table = obj["table"].lower()
         if self.table != "":
             if self.table != "mangle" and self.table != "filter":
                 self.logs_handler.logger.error("Invalid table")
@@ -82,15 +93,15 @@ class inputHandler:
         if "chain" not in keys:
             self.logs_handler.logger.error("'chain' field not found")
             return False
-        
-        self.chain = str(obj["chain"]).upper()
+        if type(obj["chain"]) != str:
+            self.logs_handler.logger.error("'chain' must be a string in input.json")
+            return False
+        self.chain = obj["chain"].upper()
         if self.table == "":
             self.chain = ""
-            
         if self.chain == "" and self.table != "":
             self.logs_handler.logger.error("Invalid chain")
             return False
-        
         if self.chain != "": 
             if self.table == "mangle" and (self.chain != "OUTPUT" and self.chain != "POSTROUTING"):
                 self.logs_handler.logger.error("Invalid chain")
@@ -103,8 +114,10 @@ class inputHandler:
         if "protocol" not in keys:
             self.logs_handler.logger.error("'protocol' field not found")
             return False
-        
-        obj["protocol"] = str(obj["protocol"]).lower().strip()
+        if type(obj["protocol"]) != str:
+            self.logs_handler.logger.error("'protocol' must be a string in input.json")
+            return False
+        obj["protocol"] = obj["protocol"].lower().strip()
         if obj["protocol"] == "":
             self.protocol = ["tcp", "udp", "icmpv6"]
         else:
@@ -127,33 +140,39 @@ class inputHandler:
         if "dstPort" not in keys:
             self.logs_handler.logger.error("'dstPort' field not found in input.json")
             return False
-        
-        if ("udp" not in self.protocol and "tcp" not in self.protocol) or (type(obj["dstPort"]) != int):
+        if type(obj["dstPort"]) != int:
+            self.logs_handler.logger.error("'dstPort' must be a positive integer input.json")
+            return False
+        if "udp" not in self.protocol and "tcp" not in self.protocol:
             self.dstPort = -1
         else:
             self.dstPort = obj["dstPort"]
-        
-        if self.dstPort < 0:
+        if self.dstPort < 0 and ("udp" in self.protocol or "tcp" in self.protocol):
             self.logs_handler.logger.warning("dst port not specified")
         
         # ipv6Dest check
         if "ipv6Dest" not in keys:
             self.logs_handler.logger.error("'ipv6Dest' field not found in input.json")
             return False
-        
-        obj["ipv6Dest"] = str(obj["ipv6Dest"])
-        try: 
-            self.ipv6Dest = obj["ipv6Dest"] if type(ip_address(obj["ipv6Dest"])) is IPv6Address else ""
-        except ValueError: 
-            self.logs_handler.logger.warning("ipv6Dest not specified")
-            self.ipv6Dest = ""
+        if type(obj["ipv6Dest"]) != str:
+            self.logs_handler.logger.error("'ipv6Dest' must be a string in input.json")
+            return False
+        if obj["ipv6Dest"] != "":
+            try: 
+                addr = type(ip_address(obj["ipv6Dest"])) is IPv6Address
+            except ValueError: 
+                self.logs_handler.logger.error("Invalid ipv6Dest")
+                return False
+        self.ipv6Dest = obj["ipv6Dest"]
         
         # type check
         if "type" not in keys:
             self.logs_handler.logger.error("'type' field not found in input.json")
             return False
-        
-        obj["type"] = str(obj["type"]).lower()
+        if type(obj["type"]) != str:
+            self.logs_handler.logger.error("'type' must be a string in input.json")
+            return False
+        obj["type"] = obj["type"].lower()
         if obj["type"] == "regular" or obj["type"] == "overlapping" or obj["type"] == "headerchain" \
             or obj["type"] == "overlapping-headerchain" or obj["type"] == "regular-headerchain":
             self.type = obj["type"]
@@ -165,7 +184,6 @@ class inputHandler:
         if "singleTest" not in keys:
             self.logs_handler.logger.error("'singleTest' field not found in input.json")
             return False
-        
         if "overlapping" in self.type:
             if type(obj["singleTest"]) != int or (obj["singleTest"] != 0 and obj["singleTest"] != 1):
                 self.logs_handler.logger.error("'singleTest' field must be 0 or 1 in input.json")
@@ -178,37 +196,79 @@ class inputHandler:
         if "fragmentSize" not in keys:
             self.logs_handler.logger.error("'fragmentSize' field not found in input.json")
             return False
-        
         if "regular" in self.type:
             if type(obj["fragmentSize"]) == int and obj["fragmentSize"] >= 56:
                 self.fragmentSize = obj["fragmentSize"]
             else:
                 self.logs_handler.logger.warning("fragmentSize not specified, default is 1280")
         
-        if "fragments" not in keys:
-            self.logs_handler.logger.error("'fragments' field not found in input.json")
-            return False
-        
         # tcp_handshake_headerchain check
         if "tcp_handshake_headerchain" not in keys:
             self.logs_handler.logger.error("'tcp_handshake_headerchain' field not found in input.json")
             return False
-        
         if type(obj["tcp_handshake_headerchain"]) != list:
             self.logs_handler.logger.error("'tcp_handshake_headerchain' field must be a list in input.json")
             return False
         
+        # fragments check
+        if "fragments" not in keys:
+            self.logs_handler.logger.error("'fragments' field not found in input.json")
+            return False
         if "overlapping" in self.type or "headerchain" in self.type:
             if type(obj["fragments"]) != list or len(obj["fragments"]) == 0:
                 self.logs_handler.logger.error("fragments filed must be a non-empty list")
                 return False
-        
-        # fragments check
+            
+        # fragments' fields check
         fragments = obj["fragments"]
         if "overlapping" in self.type:
             k = 1
             for frag in fragments:
                 frag_keys = frag.keys()
+                if len(frag_keys) > 10:
+                    self.logs_handler.logger.error("Fragment %d contains unexpected fileds", k)
+                    return False
+                elif len(frag_keys) < 10:
+                    self.logs_handler.logger.error("Fragment %d does not contain all the expected fileds", k)
+                    return False
+            
+                # src check
+                if "src" not in frag_keys:
+                    self.logs_handler.logger.error("'src' field misses in fragment %d ", k)
+                    return False
+                if type(frag["src"]) != str:
+                    self.logs_handler.logger.error("'src' must be a string in fragment %d ", k)
+                    return False
+                if frag["src"] != "":
+                    try: 
+                        addr =  type(ip_address(frag["src"])) is IPv6Address 
+                    except ValueError: 
+                        self.logs_handler.logger.error("Invalid src in fragment %d", k)
+                        return False
+                
+                # dst check
+                if "dst" not in frag_keys:
+                    self.logs_handler.logger.error("'dst' field misses in fragment %d ", k)
+                    return False
+                if type(frag["dst"]) != str:
+                    self.logs_handler.logger.error("'dst' must be a string in fragment %d", k)
+                    return False
+                if frag["dst"] != "":
+                    try: 
+                        addr =  type(ip_address(frag["dst"])) is IPv6Address 
+                    except ValueError: 
+                        self.logs_handler.logger.error("Invalid dst in fragment %d", k)
+                        return False
+                
+                # plen check
+                if "plen" not in frag_keys:
+                    self.logs_handler.logger.error("'plen' field misses in fragment %d ", k)
+                    return False
+                if type(frag["plen"]) != int or frag["plen"] > 65535:
+                    self.logs_handler.logger.error("'plen' must be an integer between [0, 65535] in fragment %d ", k)
+                    return False
+                if frag["plen"] < 0:
+                    frag["plen"] = -1
             
                 # payload lenght check
                 if "PayloadLenght" not in frag_keys:
@@ -222,10 +282,15 @@ class inputHandler:
                 if "HopLimit" not in frag_keys:
                     self.logs_handler.logger.error("'HopLimit' field misses in fragment %d ", k)
                     return False
-                if type(frag["HopLimit"]) != int or frag["HopLimit"] < 0 or frag["HopLimit"] > 255:
-                    self.logs_handler.logger.warning("'HopLimit' must be an integer between [0,255] in fragment %d in order to be set", k)
+                if type(frag["HopLimit"]) != int:
+                    self.logs_handler.logger.error("'HopLimit' must be an integer in fragment %d ", k)
+                    return False
+                if frag["HopLimit"] < 0:
                     frag["HopLimit"] = -1
-            
+                if frag["HopLimit"] > 255:
+                    self.logs_handler.logger.error("'HopLimit' must be an integer between [0,255] in fragment %d", k)
+                    return False
+
                 # fragment offset check
                 if "FO" not in frag_keys:
                     self.logs_handler.logger.error("'FO' field misses in fragment %d ", k)
@@ -284,6 +349,7 @@ class inputHandler:
             
         self.fragments = fragments
 
+        # tcp_handshake_headerchain processing
         fragments_printable_headers = []
         if "headerchain" in self.type:
             if "tcp" in self.protocol:
@@ -295,7 +361,8 @@ class inputHandler:
                     nh = nh[0]
                     header_value = self.header_value(header)
                     self.tcp_handshake_headerchain.append([[header_value, nh]])
-                
+            
+            # fragments headerchain processing
             k = 1
             for frag in self.fragments:
                 frag_keys = frag.keys()
@@ -392,6 +459,7 @@ class inputHandler:
                 fragments_printable_headers.append(printable_headers)
                 k += 1
         
+        # show the input on command line
         if self.dstPort < 0:
             self.logs_handler.logger.info("table=%s, chain=%s, protocol=%s, dstPort=%s, ipv6Dest=%s, type=%s", \
             "filter" if self.table == "" else self.table, "OUTPUT" if self.chain == "" else self.chain, \
@@ -408,8 +476,8 @@ class inputHandler:
             self.logs_handler.logger.info("singleTest=%d", self.singleTest)
             k = 1
             for frag in self.fragments:
-                self.logs_handler.logger.info("Fragment %d\nPayloadLenght=%d, HopLimit=%d, FO=%d, M=%d, indexes=%s, payload=%s", \
-                    k, frag["PayloadLenght"], frag["HopLimit"], frag["FO"], frag["M"], frag["indexes"], frag["payload"])
+                self.logs_handler.logger.info("Fragment %d\n src=%s, dst=%s, plen=%d, PayloadLenght=%d, HopLimit=%d, FO=%d, M=%d, indexes=%s, payload=%s", \
+                    k, frag["src"], frag["dst"],  frag["plen"], frag["PayloadLenght"], frag["HopLimit"], frag["FO"], frag["M"], frag["indexes"], frag["payload"])
                 k+=1
         
         if "headerchain" in self.type:
