@@ -354,13 +354,19 @@ class inputHandler:
         if "headerchain" in self.type:
             if "tcp" in self.protocol:
                 tcp_handshake_headerchain = obj["tcp_handshake_headerchain"]
+                new_chain = []
                 for elem in tcp_handshake_headerchain:
                     header = list(elem.keys())
                     header = header[0]
+                    header_value = self.header_value(header)  
+                    if header_value == None or header_value == 58 or header_value == 6 or header_value == 17:
+                        self.logs_handler.logger.error("Invalid extension header in tcp_handshake_headerchain")
+                        return False
                     nh = list(elem.values())
-                    nh = nh[0]
-                    header_value = self.header_value(header)
-                    self.tcp_handshake_headerchain.append([[header_value, nh]])
+                    nh = nh[0]  
+                    new_chain.append([header_value, nh])
+                    
+                self.tcp_handshake_headerchain.append(new_chain)
             
             # fragments headerchain processing
             k = 1
@@ -448,9 +454,11 @@ class inputHandler:
                                     self.logs_handler.logger.error("icmpv6 seq must be an integer between [0, 65535] in fragment %d ", k)
                                     return False
                                 self.icmpv6_seq = seq  
-                                
-                        header_value = self.header_value(key)
-                        headers.append([header_value, nh])
+                        
+                        if key != "tcp" and key != "udp" and key != "icmpv6":        
+                            header_value = self.header_value(key)
+                            headers.append([header_value, nh])
+                            
                         printable_headers.append([key, nh])
                     else:
                         self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)

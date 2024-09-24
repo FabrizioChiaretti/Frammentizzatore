@@ -48,11 +48,13 @@ class sender:
             k = 0
             while k < len(fragments):
                 i = 0
+                self.logs_handler.logger.info("\n\n#################### LIST %d ####################\n", k+1)
                 while i < len(fragments[k]):
                     self.logs_handler.logger.info("\n########## FRAGMENT %d ##########", i+1)
                     fragments[k][i].show()
                     i+=1
                 k += 1
+                
                 #sleep(10)
         
         if singleTest == 1:

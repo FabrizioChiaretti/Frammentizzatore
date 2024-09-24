@@ -3,24 +3,27 @@
 
 	"chain" : "",
 
-	"protocol": "icmpv6 tcp",
+	"protocol": "icmpv6",
 	
 	"dstPort": -1,
 
 	"ipv6Dest":"", 
 	
-	"type":"HeaderChain", 
+	"type":"overlapping-HeaderChain", 
 	
 	"fragmentSize": 56,
 
-	"singleTest": 0,
+	"singleTest": 1,
 
-	"tcp_handshake_headerchain": [{"fragment": 6}],
+	"tcp_handshake_headerchain": [{"destination": -1}, {"destination": -1}, {"destination": -1}, {"tcp":{"sport": 3000, "dport":9000}}],
 
-	"fragments":[
+	"fragments":[	
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":16, "FO":0, "M": 0, "indexes":[], "payload":"",
-		"HeaderChain":[{"fragment": -1}, {"fragment": -1}]}
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":40, "M": 0, "indexes":[], "payload":"",
+		"HeaderChain":[{"fragment":-1}]},
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":40, "FO":0, "M": 1, "indexes":[], "payload":"",
+		"HeaderChain":[{"fragment":-1},  {"icmpv6":{"id":1, "seq":4000}}]}
 
 	]
 
