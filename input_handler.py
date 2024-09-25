@@ -3,6 +3,7 @@ from json import load
 from re import match
 from ipaddress import ip_address, IPv6Address 
 from log import log
+from time import sleep
 
 
 class inputHandler:
@@ -401,34 +402,43 @@ class inputHandler:
                             self.logs_handler.logger.error("Invalid extension header in fragment %d ", k)
                             return False
                         if key == "udp" and len(header["udp"]) > 0 and len(header["udp"]) <= 2:
-                               if "sport" in header["udp"]:
+                            new_header = [17, -1, -1]
+                            if "sport" in header["udp"]:
                                 sport = header["udp"]["sport"]
                                 if type(sport) != int or sport < 0 or sport > 65535:
                                     self.logs_handler.logger.error("udp sport must be an integer between [0, 65535] in fragment %d ", k)
                                     return False
-                                self.udp_sport = sport
+                                #if self.udp_sport == None:
+                                new_header[1] = sport
                                 
-                               if "dport" in header["udp"]:
+                            if "dport" in header["udp"]:
                                 dport = header["udp"]["dport"]
                                 if type(dport) != int or dport < 0 or dport > 65535:
                                     self.logs_handler.logger.error("udp dport must be an integer between [0, 65535] in fragment %d ", k)
                                     return False
-                                self.udp_dport = dport
+                                #if self.udp_dport == None:
+                                new_header[2] = dport
+                            
+                            headers.append(new_header)  
+                            printable_headers.append(new_header)
                         
                         if key == "tcp" and len(header["tcp"]) > 0 and len(header["tcp"]) <= 3:
+                            new_header = [6, -1, -1, ""]
                             if "sport" in header["tcp"]:
                                 sport = header["tcp"]["sport"]
                                 if type(sport) != int or sport < 0 or sport > 65535:
                                     self.logs_handler.logger.error("tcp sport must be an integer between [0, 65535] in fragment %d ", k)
                                     return False
-                                self.tcp_sport = sport
+                                #if self.tcp_sport == None:
+                                new_header[1] = sport
                                         
                             if "dport" in header["tcp"]:
                                 dport = header["tcp"]["dport"]
                                 if type(dport) != int or dport < 0 or dport > 65535:
                                     self.logs_handler.logger.error("tcp dport must be an integer between [0, 65535] in fragment %d ", k)
                                     return False
-                                self.tcp_dport = dport
+                                #if self.tcp_dport == None:
+                                new_header[2] = dport
                                     
                             if "flags" in header["tcp"]:
                                 flags = header["tcp"]["flags"]
@@ -439,34 +449,43 @@ class inputHandler:
                                     if flag not in "FSRPAUEC":
                                         self.logs_handler.logger.error("Unknown tcp flags in fragment %d, supported flags are FSRPAUEC", k)
                                         return False
-                                self.tcp_flags = flags
+                                #if self.tcp_flags == None:
+                                new_header[3] = flags
+                            headers.append(new_header)  
+                            printable_headers.append(new_header)
                         
                         if key == "icmpv6" and len(header["icmpv6"]) > 0 and len(header["icmpv6"]) <= 2:
+                            new_header = [58, -1, -1]
                             if "id" in header["icmpv6"]:
                                 id = header["icmpv6"]["id"]  
                                 if type(id) != int or id < 0 or id > 65535:
                                     self.logs_handler.logger.error("icmpv6 id must be an integer between [0, 65535] in fragment %d ", k)
                                     return False
-                                self.icmpv6_id = id  
+                                #if self.icmpv6_id == None:
+                                new_header[1] = id 
                             if "seq" in header["icmpv6"]:
                                 seq = header["icmpv6"]["seq"]  
                                 if type(seq) != int or seq < 0 or seq > 65535:
                                     self.logs_handler.logger.error("icmpv6 seq must be an integer between [0, 65535] in fragment %d ", k)
                                     return False
-                                self.icmpv6_seq = seq  
+                                #if self.icmpv6_seq == None:
+                                new_header[2] = seq
+                                
+                            headers.append(new_header)  
+                            printable_headers.append(new_header)
                         
-                        if key != "tcp" and key != "udp" and key != "icmpv6":        
+                        if key != "tcp" and key != "udp" and key != "icmpv6":
                             header_value = self.header_value(key)
-                            headers.append([header_value, nh])
-                            
-                        printable_headers.append([key, nh])
+                            headers.append([header_value, nh])  
+                            printable_headers.append([key, nh])
+                    
                     else:
                         self.logs_handler.logger.error("Can not process 'HeaderChain' field in fragment %d ", k)
                         return False
                 self.fragments_headerchain.append(headers)
                 fragments_printable_headers.append(printable_headers)
                 k += 1
-        
+                
         # show the input on command line
         if self.dstPort < 0:
             self.logs_handler.logger.info("table=%s, chain=%s, protocol=%s, dstPort=%s, ipv6Dest=%s, type=%s", \
