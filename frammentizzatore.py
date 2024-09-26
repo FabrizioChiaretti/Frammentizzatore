@@ -67,20 +67,20 @@ class frammentizzatore:
         if TCP in pkt:
             frame = pkt[TCP]
             if len(raw(frame.payload)) == 0:
-                if AH in pkt:
-                    return None
+                #if AH in pkt:
+                #    return None
+                #else:
+                if "headerchain" in self.input_handler.type:
+                    input_pkt = [[pkt]]
+                    tmp = self.input_handler.fragments_headerchain
+                    self.input_handler.fragments_headerchain = self.input_handler.tcp_handshake_headerchain
+                    matching_fragments = [[0]]
+                    res = self.header_chain_processor(input_pkt, matching_fragments, input_packet=packet)
+                    self.input_handler.fragments_headerchain = tmp
+                    matching_fragments = None
                 else:
-                    if "headerchain" in self.input_handler.type:
-                        input_pkt = [[pkt]]
-                        tmp = self.input_handler.fragments_headerchain
-                        self.input_handler.fragments_headerchain = self.input_handler.tcp_handshake_headerchain
-                        matching_fragments = [[0]]
-                        res = self.header_chain_processor(input_pkt, matching_fragments, input_packet=packet)
-                        self.input_handler.fragments_headerchain = tmp
-                        matching_fragments = None
-                    else:
-                        res = self.fragment(packet, new_input_packet=None, fragment_size=self.max_fragment_lenght)
-                    return res
+                    res = self.fragment(packet, new_input_packet=None, fragment_size=self.max_fragment_lenght)
+                return res
         
         if "regular" in self.input_handler.type:
             res = self.fragment(packet, new_input_packet=pkt, fragment_size=self.input_handler.fragmentSize)
@@ -319,7 +319,7 @@ class frammentizzatore:
             pld = encapsulated_data.copy()
             del pld.payload
             next_header_chain.append(pld)
-            while encapsulated_data.nh not in [59, 6, 17, 58]:
+            while encapsulated_data.nh not in [59, 6, 17, 58, 50]:
                 pld = encapsulated_data.copy()
                 del pld.payload
                 next_header_chain.append(pld)
@@ -349,6 +349,11 @@ class frammentizzatore:
                     pld = encapsulated_data.payload.copy()
                     pld.remove_payload()
                     next_header_chain.append(pld)
+            
+            if int(encapsulated_data.nh) == 50: # esp
+                pld = encapsulated_data[ESP].copy()
+                del pld.data
+                next_header_chain.append(pld)
 
         if int(packet[j].nh) == 50: # esp
             upper_layer_payload = packet[ESP].copy()
@@ -383,9 +388,9 @@ class frammentizzatore:
         first_header = packet[i].nh
         fragments = self.input_handler.fragments
         
-        if len(fragments) == 1 and AH in packet:
+        '''if len(fragments) == 1 and AH in packet:
             self.logs_handler.logger.warning("Authentication header not supported for atomic fragments")
-            return None, None
+            return None, None'''
         
         for frag in fragments:
             if len(frag["indexes"]) > 0:
@@ -794,7 +799,7 @@ class frammentizzatore:
         next_header_chain_lenght = 0        
         j = i     
         #packet[j].show()   
-        while (packet[j].nh not in [59, 6, 17, 58, 41, 50]): # no next header, tcp, udp, icmpv6
+        while (packet[j].nh not in [59, 6, 17, 58, 41, 50]):
             payload_check.remove_payload()
             next_header_chain_lenght += len(raw(payload_check))
             payload_check = packet[j+1].payload.copy()
@@ -817,7 +822,7 @@ class frammentizzatore:
             pld = encapsulated_data.copy()
             del pld.payload
             next_header_chain_lenght += len(pld)
-            while encapsulated_data.nh not in [59, 6, 17, 58]:
+            while encapsulated_data.nh not in [59, 6, 17, 58, 50]:
                 pld = encapsulated_data.copy()
                 del pld.payload
                 next_header_chain_lenght += len(pld)
@@ -847,6 +852,11 @@ class frammentizzatore:
                     pld = encapsulated_data.payload.copy()
                     pld.remove_payload()
                     next_header_chain_lenght += len(pld)
+            
+            if int(encapsulated_data.nh) == 50: # esp
+                pld = encapsulated_data[ESP].copy()
+                del pld.data
+                next_header_chain_lenght += len(pld)
 
         if int(packet[j].nh) == 50: # esp
             del payload_check.data
@@ -861,7 +871,7 @@ class frammentizzatore:
         
         if len(raw(first_fragment)) <= fragment_size:
             if AH in packet:
-                self.logs_handler.logger.warning("Authentication header not supported for atomic fragments")
+                self.logs_handler.logger.warning("Authentication header is not supported for atomic fragments")
                 return None
             first_fragment[IPv6ExtHdrFragment].m = 0
             self.logs_handler.logger.info("Regular fragmentation ends, returning one fragment")
@@ -1001,7 +1011,6 @@ class frammentizzatore:
             elif AH in input_packet:
                 res = input_packet[AH].copy()
                 del res.payload
-                res.show()
                 
         return res
     
@@ -1061,7 +1070,7 @@ class frammentizzatore:
                     if fragment[IPv6ExtHdrFragment].offset == 0 and i not in new_offset:
                         new_offset[i] = 0
                 else :
-                    new_offset[0] = 0
+                    new_offset[i] = 0
                 
                 #fragPart.show()
                 #unfragPart.show()
@@ -1135,7 +1144,7 @@ class frammentizzatore:
                         if header in [58, 6, 17]:
                             if "overlapping" not in self.input_handler.type:
                                 original_packet = packet.copy()
-                                if header == 6 and TCP in payload:
+                                if header == 6 and TCP in fragment:
                                     sport = headerchain[j][1]
                                     dport = headerchain[j][2]
                                     flags = headerchain[j][3]
@@ -1143,13 +1152,13 @@ class frammentizzatore:
                                         original_packet[TCP].sport = sport
                                     if dport >= 0:
                                         original_packet[TCP].dport = dport
-                                    if flags != None:
+                                    if flags != "":
                                         original_packet[TCP].flags = flags
                                         
                                     del original_packet[TCP].chksum
                                     input_packet.set_payload(bytes(original_packet))
-                                    original_packet = IPv6(input_packet.get_payload())
-                                    
+                                    original_packet = IPv6(input_packet.get_payload()).copy()
+                            
                                     #reset the original packet
                                     input_packet.set_payload(bytes(packet))
                                     
@@ -1158,36 +1167,36 @@ class frammentizzatore:
                                     payload[TCP].flags = original_packet[TCP].flags
                                     payload[TCP].chksum = original_packet[TCP].chksum
                                     
-                                if header == 17 and UDP in payload:
+                                if header == 17 and UDP in fragment:
                                     sport = headerchain[j][1]
                                     dport = headerchain[j][2]
                                     if sport >= 0:
-                                        original_packet[TCP].sport = sport
+                                        original_packet[UDP].sport = sport
                                     if dport >= 0:
-                                        original_packet[TCP].dport = dport
+                                        original_packet[UDP].dport = dport
                                         
-                                    del original_packet[TCP].chksum
+                                    del original_packet[UDP].chksum
                                     input_packet.set_payload(bytes(original_packet))
-                                    original_packet = IPv6(input_packet.get_payload())
+                                    original_packet = IPv6(input_packet.get_payload()).copy()
                                     
                                     #reset the original packet
                                     input_packet.set_payload(bytes(packet))
                                     
-                                    payload[TCP].sport = original_packet[TCP].sport
-                                    payload[TCP].dport = original_packet[TCP].dport
-                                    payload[TCP].chksum = original_packet[TCP].chksum
+                                    payload[UDP].sport = original_packet[UDP].sport
+                                    payload[UDP].dport = original_packet[UDP].dport
+                                    payload[UDP].chksum = original_packet[UDP].chksum
                                 
                                 if header == 58:
                                     id = headerchain[j][1]
                                     sequence = headerchain[j][2]
-                                    if ICMPv6EchoRequest in payload:
+                                    if ICMPv6EchoRequest in fragment:
                                         if id >= 0:
                                             original_packet[ICMPv6EchoRequest].id = id
                                         if sequence >= 0:
                                             original_packet[ICMPv6EchoRequest].seq = sequence
                                         del original_packet[ICMPv6EchoRequest].cksum
                                         
-                                    elif ICMPv6EchoReply in payload:
+                                    elif ICMPv6EchoReply in fragment:
                                         if id >= 0:
                                             original_packet[ICMPv6EchoReply].id = id
                                         if sequence >= 0:
@@ -1195,16 +1204,16 @@ class frammentizzatore:
                                         del original_packet[ICMPv6EchoReply].cksum
                                     
                                     input_packet.set_payload(bytes(original_packet))
-                                    original_packet = IPv6(input_packet.get_payload())
-        
+                                    original_packet = IPv6(input_packet.get_payload()).copy()                                        
+                                        
                                     #reset the original packet
                                     input_packet.set_payload(bytes(packet))
                                     
-                                    if ICMPv6EchoRequest in payload:
+                                    if ICMPv6EchoRequest in fragment:
                                         payload[ICMPv6EchoRequest].id = original_packet[ICMPv6EchoRequest].id
                                         payload[ICMPv6EchoRequest].seq = original_packet[ICMPv6EchoRequest].seq
                                         payload[ICMPv6EchoRequest].cksum = original_packet[ICMPv6EchoRequest].cksum
-                                    elif ICMPv6EchoReply in payload:
+                                    elif ICMPv6EchoReply in fragment:
                                         payload[ICMPv6EchoReply].id = original_packet[ICMPv6EchoReply].id
                                         payload[ICMPv6EchoReply].seq = original_packet[ICMPv6EchoReply].seq
                                         payload[ICMPv6EchoReply].cksum = original_packet[ICMPv6EchoReply].cksum
@@ -1222,13 +1231,13 @@ class frammentizzatore:
                                 if header != last_header and j+1 < len(headerchain):
                                     new_header.nh = headerchain[j+1][0]
                                     if new_header.nh == 58:
-                                        if ICMPv6EchoRequest not in payload or ICMPv6EchoReply not in payload:
+                                        if ICMPv6EchoRequest not in fragment and ICMPv6EchoReply not in fragment:
                                             new_header.nh = last_header
                                     if new_header.nh == 6:
-                                        if TCP not in payload:
+                                        if TCP not in fragment:
                                             new_header.nh = last_header
                                     if new_header.nh == 17:
-                                        if UDP not in payload:
+                                        if UDP not in fragment:
                                             new_header.nh = last_header
                                         
                                 if j == len(headerchain)-1 and (header != last_header):
@@ -1245,7 +1254,7 @@ class frammentizzatore:
             
                     if payload != None:
                         new_fragment = new_fragment / payload
-                        
+        
                 else:
                     j = 0
                     new_fragment.nh = headerchain[0] if headerchain[0] != "payload" else last_header
@@ -1262,7 +1271,7 @@ class frammentizzatore:
                             if header in [58, 6, 17]:  
                                 if "overlapping" not in self.input_handler.type:
                                     original_packet = packet.copy()
-                                    if header == 6 and TCP in payload:
+                                    if header == 6 and TCP in fragment:
                                         sport = headerchain[j][1]
                                         dport = headerchain[j][2]
                                         flags = headerchain[j][3]
@@ -1270,13 +1279,13 @@ class frammentizzatore:
                                             original_packet[TCP].sport = sport
                                         if dport >= 0:
                                             original_packet[TCP].dport = dport
-                                        if flags != None:
+                                        if flags != "":
                                             original_packet[TCP].flags = flags
                                             
                                         del original_packet[TCP].chksum
                                         input_packet.set_payload(bytes(original_packet))
-                                        original_packet = IPv6(input_packet.get_payload())
-                                        
+                                        original_packet = IPv6(input_packet.get_payload()).copy()
+                    
                                         #reset the original packet
                                         input_packet.set_payload(bytes(packet))
                                         
@@ -1285,36 +1294,36 @@ class frammentizzatore:
                                         payload[TCP].flags = original_packet[TCP].flags
                                         payload[TCP].chksum = original_packet[TCP].chksum
                                         
-                                    if header == 17 and UDP in payload:
+                                    if header == 17 and UDP in fragment:
                                         sport = headerchain[j][1]
                                         dport = headerchain[j][2]
                                         if sport >= 0:
-                                            original_packet[TCP].sport = sport
+                                            original_packet[UDP].sport = sport
                                         if dport >= 0:
-                                            original_packet[TCP].dport = dport
+                                            original_packet[UDP].dport = dport
                                             
-                                        del original_packet[TCP].chksum
+                                        del original_packet[UDP].chksum
                                         input_packet.set_payload(bytes(original_packet))
-                                        original_packet = IPv6(input_packet.get_payload())
+                                        original_packet = IPv6(input_packet.get_payload()).copy()
                                         
                                         #reset the original packet
                                         input_packet.set_payload(bytes(packet))
                                         
-                                        payload[TCP].sport = original_packet[TCP].sport
-                                        payload[TCP].dport = original_packet[TCP].dport
-                                        payload[TCP].chksum = original_packet[TCP].chksum
+                                        payload[UDP].sport = original_packet[UDP].sport
+                                        payload[UDP].dport = original_packet[UDP].dport
+                                        payload[UDP].chksum = original_packet[UDP].chksum
                                     
                                     if header == 58:
                                         id = headerchain[j][1]
                                         sequence = headerchain[j][2]
-                                        if ICMPv6EchoRequest in payload:
+                                        if ICMPv6EchoRequest in fragment:
                                             if id >= 0:
                                                 original_packet[ICMPv6EchoRequest].id = id
                                             if sequence >= 0:
                                                 original_packet[ICMPv6EchoRequest].seq = sequence
                                             del original_packet[ICMPv6EchoRequest].cksum
                                             
-                                        elif ICMPv6EchoReply in payload:
+                                        elif ICMPv6EchoReply in fragment:
                                             if id >= 0:
                                                 original_packet[ICMPv6EchoReply].id = id
                                             if sequence >= 0:
@@ -1322,16 +1331,16 @@ class frammentizzatore:
                                             del original_packet[ICMPv6EchoReply].cksum
                                             
                                         input_packet.set_payload(bytes(original_packet))
-                                        original_packet = IPv6(input_packet.get_payload())
+                                        original_packet = IPv6(input_packet.get_payload()).copy()
                                         
                                         #reset the original packet
                                         input_packet.set_payload(bytes(packet))
                                         
-                                        if ICMPv6EchoRequest in payload:
+                                        if ICMPv6EchoRequest in fragment:
                                             payload[ICMPv6EchoRequest].id = original_packet[ICMPv6EchoRequest].id
                                             payload[ICMPv6EchoRequest].seq = original_packet[ICMPv6EchoRequest].seq
                                             payload[ICMPv6EchoRequest].cksum = original_packet[ICMPv6EchoRequest].cksum
-                                        elif ICMPv6EchoReply in payload:
+                                        elif ICMPv6EchoReply in fragment:
                                             payload[ICMPv6EchoReply].id = original_packet[ICMPv6EchoReply].id
                                             payload[ICMPv6EchoReply].seq = original_packet[ICMPv6EchoReply].seq
                                             payload[ICMPv6EchoReply].cksum = original_packet[ICMPv6EchoReply].cksum
@@ -1349,13 +1358,13 @@ class frammentizzatore:
                                     if header != last_header and j+1 < len(headerchain):
                                         new_header.nh = headerchain[j+1][0]
                                         if new_header.nh == 58:
-                                            if ICMPv6EchoRequest not in payload or ICMPv6EchoReply not in payload:
+                                            if ICMPv6EchoRequest not in fragment or ICMPv6EchoReply not in fragment:
                                                 new_header.nh = last_header
                                         if new_header.nh == 6:
-                                            if TCP not in payload:
+                                            if TCP not in fragment:
                                                 new_header.nh = last_header
                                         if new_header.nh == 17:
-                                            if UDP not in payload:
+                                            if UDP not in fragment:
                                                 new_header.nh = last_header
                                                 
                                     if j == len(headerchain)-1 and (header != last_header):

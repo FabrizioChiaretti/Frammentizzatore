@@ -1,5 +1,5 @@
 
-from scapy.all import send, raw, IPv6ExtHdrFragment
+from scapy.all import send, raw, IPv6ExtHdrFragment, AH
 from itertools import permutations
 from time import sleep
 

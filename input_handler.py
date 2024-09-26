@@ -5,6 +5,7 @@ from ipaddress import ip_address, IPv6Address
 from log import log
 from time import sleep
 
+# vedere cosa succede se c'è AH + ESP
 
 class inputHandler:
     
@@ -198,10 +199,10 @@ class inputHandler:
             self.logs_handler.logger.error("'fragmentSize' field not found in input.json")
             return False
         if "regular" in self.type:
-            if type(obj["fragmentSize"]) == int and obj["fragmentSize"] >= 56:
+            if type(obj["fragmentSize"]) == int and obj["fragmentSize"] >= 0:#and obj["fragmentSize"] >= 56:
                 self.fragmentSize = obj["fragmentSize"]
-            else:
-                self.logs_handler.logger.warning("fragmentSize not specified, default is 1280")
+            #else:
+            #    self.logs_handler.logger.warning("fragmentSize not specified, default is 1280")
         
         # tcp_handshake_headerchain check
         if "tcp_handshake_headerchain" not in keys:
@@ -353,22 +354,48 @@ class inputHandler:
         # tcp_handshake_headerchain processing
         fragments_printable_headers = []
         if "headerchain" in self.type:
-            if "tcp" in self.protocol:
+            if "tcp" in self.protocol or "ah" in self.protocol:
                 tcp_handshake_headerchain = obj["tcp_handshake_headerchain"]
                 new_chain = []
                 for elem in tcp_handshake_headerchain:
                     header = list(elem.keys())
                     header = header[0]
                     header_value = self.header_value(header)  
-                    if header_value == None or header_value == 58 or header_value == 6 or header_value == 17:
+                    if header != 6 and (header_value == None or header_value == 58 or header_value == 17):
                         self.logs_handler.logger.error("Invalid extension header in tcp_handshake_headerchain")
                         return False
-                    nh = list(elem.values())
-                    nh = nh[0]  
-                    new_chain.append([header_value, nh])
-                    
+                    if header != "tcp":
+                        nh = list(elem.values())
+                        nh = nh[0]  
+                        new_chain.append([header_value, nh])
+                    else:
+                        new_header = [6, -1, -1, ""]
+                        if "sport" in elem["tcp"]:
+                            sport = elem["tcp"]["sport"]
+                            if type(sport) != int or sport < 0 or sport > 65535:
+                                self.logs_handler.logger.error("tcp sport must be an integer between [0, 65535] in tcp_handshake_headerchain")
+                                return False
+                            new_header[1] = sport
+                        if "dport" in elem["tcp"]:
+                            dport = elem["tcp"]["dport"]
+                            if type(dport) != int or dport < 0 or dport > 65535:
+                                self.logs_handler.logger.error("tcp dport must be an integer between [0, 65535] in tcp_handshake_headerchain")
+                                return False
+                            new_header[2] = dport
+                        if "flags" in elem["tcp"]:
+                            flags = elem["tcp"]["flags"]
+                            if type(flags) != str:
+                                self.logs_handler.logger.error("tcp flags must be a string in fragment %d", k)
+                                return False
+                            for flag in flags:
+                                if flag not in "FSRPAUEC":
+                                    self.logs_handler.logger.error("Unknown tcp flags in fragment %d, supported flags are FSRPAUEC", k)
+                                    return False
+                                
+                        new_chain.append(new_header)
+                        
                 self.tcp_handshake_headerchain.append(new_chain)
-            
+                
             # fragments headerchain processing
             k = 1
             for frag in self.fragments:
@@ -485,7 +512,7 @@ class inputHandler:
                 self.fragments_headerchain.append(headers)
                 fragments_printable_headers.append(printable_headers)
                 k += 1
-                
+              
         # show the input on command line
         if self.dstPort < 0:
             self.logs_handler.logger.info("table=%s, chain=%s, protocol=%s, dstPort=%s, ipv6Dest=%s, type=%s", \

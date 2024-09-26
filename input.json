@@ -3,34 +3,29 @@
 
 	"chain" : "",
 
-	"protocol": "icmpv6 tcp udp",
+	"protocol": "ah",
 	
 	"dstPort": -1,
 
 	"ipv6Dest":"", 
 	
-	"type":"regular-HeaderChain", 
+	"type":"regular", 
 	
-	"fragmentSize": 208,
+	"fragmentSize": 144,
 
 	"singleTest": 1,
 
-	"tcp_handshake_headerchain": [{"destination": -1}, {"destination": -1}, {"destination": -1}],
+	"tcp_handshake_headerchain": [{"tcp": {"dport":5001}}],
 
 	"fragments":[	
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":40, "FO":0, "M": 1, "indexes":[], "payload":"",
-		"HeaderChain":[{"hopbyhop":-1}, {"fragment":-1},  {"destination":-1},  {"udp":{"dport":6000}}, {"tcp":{"sport":1500}}, {"icmpv6":{"seq":1500}}]},
+		
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":88, "FO":0, "M": 1, "indexes":[], "payload":"",
+		"HeaderChain":[{"fragment":-1}, {"udp":{"sport":5001, "dport":5001}}]},
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":16, "FO":40, "M": 1, "indexes":[], "payload":"",
-		"HeaderChain":[{"hopbyhop":-1}, {"fragment":-1}]},
-
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":56, "M": 0, "indexes":[], "payload":"",
-		"HeaderChain":[{"fragment":-1}]},
-
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":56, "M": 0, "indexes":[], "payload":"",
-		"HeaderChain":[{"hopbyhop":-1}, {"fragment":-1}]}
-
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":88, "M": 0, "indexes":[], "payload":"",
+		"HeaderChain":[{"fragment":-1}]}
+		
 	]
 
 }
