@@ -5,7 +5,9 @@ from ipaddress import ip_address, IPv6Address
 from log import log
 from time import sleep
 
-# vedere cosa succede se c'è AH + ESP
+# vedere cosa succede se inserisco extension headers nel pacchetto originale -> overlapping_fragmentation da testare meglio, aggiornare la (regular) fragment
+# vedere bene tutto il codice in generale su questi aggiornamenti
+# decidere se dare la possibilità di replicare ipv6, tcp, icmpv6 e udp headers -> penso di no
 
 class inputHandler:
     

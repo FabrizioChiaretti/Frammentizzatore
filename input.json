@@ -3,29 +3,25 @@
 
 	"chain" : "",
 
-	"protocol": "ah",
+	"protocol": "icmpv6",
 	
 	"dstPort": -1,
 
 	"ipv6Dest":"", 
 	
-	"type":"regular", 
+	"type":"HeaderChain", 
 	
-	"fragmentSize": 144,
+	"fragmentSize": 208,
 
 	"singleTest": 1,
 
-	"tcp_handshake_headerchain": [{"tcp": {"dport":5001}}],
+	"tcp_handshake_headerchain": [],
 
 	"fragments":[	
 
-		
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":88, "FO":0, "M": 1, "indexes":[], "payload":"",
-		"HeaderChain":[{"fragment":-1}, {"udp":{"sport":5001, "dport":5001}}]},
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":72, "FO":16, "M": 1, "indexes":[], "payload":"",
+		"HeaderChain":[{"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1} ]}
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":88, "M": 0, "indexes":[], "payload":"",
-		"HeaderChain":[{"fragment":-1}]}
-		
 	]
 
 }
