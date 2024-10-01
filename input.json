@@ -9,19 +9,27 @@
 
 	"ipv6Dest":"", 
 	
-	"type":"HeaderChain", 
+	"type":"overlapping-HeaderChain", 
 	
-	"fragmentSize": 208,
+	"fragmentSize": 400,
 
-	"singleTest": 1,
+	"singleTest": 0,
 
-	"tcp_handshake_headerchain": [],
+	"tcp_handshake_headerchain": [{"ah":-1}],
 
 	"fragments":[	
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":72, "FO":16, "M": 1, "indexes":[], "payload":"",
-		"HeaderChain":[{"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1}, {"destination":-1} ]}
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":200, "FO":0, "M": 1, "indexes":[], "payload":"",
+		"HeaderChain":[{"fragment":-1}]},
 
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":60, "FO":200, "M": 0, "indexes":[], "payload":"",
+		"HeaderChain":[{"fragment":-1}]},
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":20, "FO":200, "M": 0, "indexes":[], "payload":"",
+		"HeaderChain":[{"fragment":-1}]},
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":30, "FO":200, "M": 0, "indexes":[], "payload":"",
+		"HeaderChain":[{"fragment":-1}]}
 	]
 
 }

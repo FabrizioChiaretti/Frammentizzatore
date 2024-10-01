@@ -29,7 +29,7 @@ class frammentizzatore:
             self.logs_handler.logger.error("Can not found IPv6 header")
             return False
         
-        if AH in packet and packet[AH].nh != 41:
+        if AH in packet and packet[AH].nh != 41 and ("regular" in self.input_handler.type or "overlapping" in self.input_handler.type):
             ah = packet[AH].copy()
             del ah.payload
             payload = packet[AH].payload.copy()
@@ -141,7 +141,6 @@ class frammentizzatore:
         res = None
         matching_fragments = None
         pkt = IPv6(packet.get_payload())
-        
         '''ah = self._ah_header()
         ah.nh = 50
         basic_header = pkt.copy()
@@ -188,6 +187,8 @@ class frammentizzatore:
                     self.input_handler.fragments_headerchain = tmp
                     matching_fragments = None
                 else:
+                    if AH in pkt:
+                        return None
                     res = self.fragment(pkt, fragment_size=self.max_fragment_lenght)
                 return res
         
@@ -196,6 +197,9 @@ class frammentizzatore:
                 
         if "overlapping" in self.input_handler.type:
             res, matching_fragments = self.overlapping_fragmentation(packet, pkt)
+        
+        if res == None and ("overlapping" in self.input_handler.type or "regular" in self.input_handler.type):
+            return res
         
         if "headerchain" in self.input_handler.type:
             if ("regular" not in self.input_handler.type) and ("overlapping" not in self.input_handler.type):
@@ -443,8 +447,8 @@ class frammentizzatore:
                 #sleep(2)
         
         if payload_nh == 41: # encapsulation
-            upper_layer_payload = payload.payload.copy() # encapsulated packet
-            encapsulated_data = upper_layer_payload.copy()
+            upper_layer_payload = payload.copy() # encapsulated packet
+            encapsulated_data = payload.copy()
 
             while encapsulated_data.nh not in [59, 6, 17, 58, 50]:
                 encapsulated_data = encapsulated_data.payload
@@ -680,10 +684,10 @@ class frammentizzatore:
                         frag_pos = original_fragments.index(res[upper_layer_header])
                         tmp.append(frag_pos)
         
-                if protocol == 41:
+                '''if protocol == 41:
                     while original_packet_payload.nh not in [58, 6, 17]:
                         original_packet_payload = original_packet_payload.payload
-                    protocol = original_packet_payload.nh
+                    protocol = original_packet_payload.nh'''
             
             original_packets = pkts
             new_packets_found += len(original_packets)
@@ -863,7 +867,9 @@ class frammentizzatore:
             routing_options.nh = 44
             first_fragment = first_fragment / routing_options
             input_payload = packet[IPv6ExtHdrRouting].payload.copy()
-            
+        
+        if first_fragment.nh == nh:
+            first_fragment.nh = 44
         packet_id = getrandbits(32)        
         first_fragment = first_fragment / IPv6ExtHdrFragment(nh = nh, m=1, id = packet_id)
         #first_fragment.show()
@@ -967,7 +973,7 @@ class frammentizzatore:
         
         self.logs_handler.logger.info("Regular fragmentation ends, returning %d fragments", len(res))
         res = [res]
-        
+
         return res
     
         
@@ -996,7 +1002,7 @@ class frammentizzatore:
         while i < len(input_fragments):
             j = 0
             while j < len(input_fragments[i]):
-                if AH in input_fragments[i][j] and len(input_fragments[i][j][AH].payload) > 0 and input_fragments[i][j][AH].nh == 50:
+                if AH in input_fragments[i][j] and len(raw(input_fragments[i][j][AH].payload)) > 0 and input_fragments[i][j][AH].nh == 50:
                     ah = input_fragments[i][j][AH].copy()
                     del ah.payload
                     payload = input_fragments[i][j][AH].payload.copy()
