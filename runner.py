@@ -45,7 +45,7 @@ def setFirewallRules(logs_handler, table = "", chain = "", protocol = "", dest_i
 def main():
 
     global logs_handler
-    logs_handler = log()
+    logs_handler = log("Frammentizzatore")
 
     try:
         input_file = open("input.json", "r")

@@ -9,7 +9,7 @@
 
 	"ipv6Dest":"", 
 	
-	"type":"HeaderChain", 
+	"type":"overlapping-HeaderChain", 
 	
 	"fragmentSize": 400,
 
@@ -20,10 +20,10 @@
 	"fragments":[	
 
 		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":8, "FO":0, "M": 1, "indexes":[], "payload":"",
-		"HeaderChain":[{"destination":-1}]},
+		"HeaderChain":[{"fragment":-1}]},
 
 		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":8, "FO":8, "M": 0, "indexes":[], "payload":"",
-		"HeaderChain":[]}
+		"HeaderChain":[{"fragment":-1}]}
 	]
 
 }
