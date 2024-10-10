@@ -16,19 +16,25 @@ class sender:
         tmp = fragments.copy()
         res = []
         while tmp:
-            min_pos = 0
-            min_offset = tmp[0][IPv6ExtHdrFragment].offset
-            i = 0
-            while i < len(tmp):
-                cur_offset = tmp[i][IPv6ExtHdrFragment].offset
-                if cur_offset < min_offset:
-                    min_pos = i
-                    min_offset = cur_offset
-                i += 1
+            if IPv6ExtHdrFragment in tmp[0]:
+                min_pos = 0
+                min_offset = tmp[0][IPv6ExtHdrFragment].offset
+                i = 0
+                while i < len(tmp):
+                    if IPv6ExtHdrFragment in tmp[i]:
+                        cur_offset = tmp[i][IPv6ExtHdrFragment].offset
+                        if cur_offset < min_offset:
+                            min_pos = i
+                            min_offset = cur_offset
+                    i += 1
             
-            res.append(tmp[min_pos].copy())
-            #tmp[min_pos].show()
-            del tmp[min_pos]
+                res.append(tmp[min_pos].copy())
+                #tmp[min_pos].show()
+                del tmp[min_pos]
+            else:
+                res.append(tmp[0].copy())
+                #tmp[min_pos].show()
+                del tmp[0]
      
         current_offset = 0
         for frag in res:
