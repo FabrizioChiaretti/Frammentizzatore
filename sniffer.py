@@ -13,16 +13,18 @@ def main ():
     interface = interface.strip()
     
     icmpv6_type = 0
-    while icmpv6_type != 1 and icmpv6_type != 2:
-        icmpv6_type = input("Options:\n1: echo-request\n2: echo reply\n")
+    while icmpv6_type != 1 and icmpv6_type != 2 and icmpv6_type != 3:
+        icmpv6_type = input("Options:\n1: echo-request\n2: echo reply\n3: ipv6\n")
         icmpv6_type = int(icmpv6_type)
-        if icmpv6_type != 1 and icmpv6_type != 2:
+        if icmpv6_type != 1 and icmpv6_type != 2 and icmpv6_type != 3:
             logs_handler.logger.error("Invalid option")
             
     if icmpv6_type == 1:
         icmpv6_type = "icmp6[icmp6type]==icmp6-echo and icmp6[icmp6type]!=icmp6-echoreply"
-    else:
+    elif icmpv6_type == 2:
         icmpv6_type = "icmp6[icmp6type]==icmp6-echoreply"
+    else:
+        icmpv6_type = "ip6"
         
     ipv6_src = ""
     while ipv6_src == "":

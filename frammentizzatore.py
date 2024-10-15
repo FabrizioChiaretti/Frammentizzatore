@@ -633,6 +633,7 @@ class frammentizzatore:
         original_fragments = res.copy()
         aux = res.copy()
         first_fragments = []
+        empty_fragments = []
         k = 0
         while k < len(aux):
             frag = aux[k]
@@ -641,6 +642,8 @@ class frammentizzatore:
                 k -= 1
                 if len(pkt[IPv6ExtHdrFragment].payload) > 0:
                     first_fragments.append(pkt)
+                else:
+                    empty_fragments.append(pkt)
             k += 1
             
         '''for f in first_fragments:
@@ -659,8 +662,10 @@ class frammentizzatore:
             original_packets, matching_fragments, protocol, upper_layer_header = self.payload_defragment(basic_header, res)
             final_packets_found += len(original_packets)
             original_indexes = []
+            for f in empty_fragments:
+                original_indexes.append(original_fragments.index(f))
             for index in matching_fragments:
-                original_indexes.append(original_fragments.index(res[index]))
+                original_indexes.append(original_fragments.index(res[index]))    
             final_matching_fragments.append(original_indexes)
             if protocol == -1:
                 return None, None
@@ -1392,17 +1397,19 @@ class frammentizzatore:
             while ind <  new_fragments_len:
                 frag = new_fragments[ind]
                 if IPv6ExtHdrFragment in frag:
-                    if frag[IPv6ExtHdrFragment].offset != 0:
-                        seq_res = None
-                        for seq in matching_fragments:
-                            if ind in seq:
-                                seq_res = seq
-                                break
-                        if seq_res != None:
-                            first_fragment = seq_res[0]
-                            frag[IPv6ExtHdrFragment].offset = frag[IPv6ExtHdrFragment].offset + (new_offset[first_fragment] // 8)
-                ind += 1
+                    seq_res = None
+                    for seq in matching_fragments:
+                        if ind in seq:
+                            seq_res = seq
+                            break
+                    if seq_res != None:
+                        for first_fragment in seq_res:
+                            if first_fragment in new_offset:
+                                if first_fragment != ind and ind != 0:
+                                    frag[IPv6ExtHdrFragment].offset = frag[IPv6ExtHdrFragment].offset + (new_offset[first_fragment] // 8)
                     
+                ind += 1
+              
             new_res.append(new_fragments)
             n += 1
         
