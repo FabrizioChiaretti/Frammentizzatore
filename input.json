@@ -20,12 +20,12 @@
 	"fragments":[	
 
 		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"",
-		"HeaderChain":[{"fragment":-1}, {"destination":-1}, {"destination":60}]},
+		"HeaderChain":[{"fragment":58}]},
 
 		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":8, "FO":0, "M": 1, "indexes":[], "payload":"",
-		"HeaderChain":[{"fragment":-1}, {"destination":-1}]},
+		"HeaderChain":[{"fragment":-1}]},
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":8, "M": 0, "indexes":[], "payload":"",
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":10, "FO":8, "M": 0, "indexes":[], "payload":"",
 		"HeaderChain":[{"fragment":-1}]}
 	]
 

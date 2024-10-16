@@ -818,14 +818,14 @@ class frammentizzatore:
         
         lenght = len(final_segments)*len(final_segments[0])
         
-        if protocol == 6:
-            protocol = "tcp"
-        elif protocol == 17:
-            protocol = "udp"
-        elif protocol == 58:
-            protocol = "icmpv6"
+        if payload_nh == 6:
+            payload_nh = "tcp"
+        elif payload_nh == 17:
+            payload_nh = "udp"
+        elif payload_nh == 58:
+            payload_nh = "icmpv6"
         else:
-            protocol = ""
+            payload_nh = ""
         
         self.logs_handler.logger.info("protocol %s, number of new packets %d, number of final packets %d", protocol, new_packets_found, final_packets_found)
         self.logs_handler.logger.info("Overlapping fragmentation ends, returning %d fragments", lenght)
