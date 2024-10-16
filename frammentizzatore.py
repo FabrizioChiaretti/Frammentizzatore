@@ -1392,21 +1392,22 @@ class frammentizzatore:
                 new_fragments.append(new_fragment)
                 i += 1
             
-            new_fragments_len = len(new_fragments)
-            ind = 0
-            while ind <  new_fragments_len:
-                frag = new_fragments[ind]
-                if IPv6ExtHdrFragment in frag:
-                    seq_res = None
-                    for seq in matching_fragments:
-                        if ind in seq:
-                            seq_res = seq
-                            break
-                    if seq_res != None:
-                        for first_fragment in seq_res:
-                            if first_fragment in new_offset:
-                                if first_fragment != ind and ind != 0:
-                                    frag[IPv6ExtHdrFragment].offset = frag[IPv6ExtHdrFragment].offset + (new_offset[first_fragment] // 8)
+            if len(input_fragments[0]) > 1:
+                new_fragments_len = len(new_fragments)
+                ind = 0
+                while ind <  new_fragments_len:
+                    frag = new_fragments[ind]
+                    if IPv6ExtHdrFragment in frag:
+                        seq_res = None
+                        for seq in matching_fragments:
+                            if ind in seq:
+                                seq_res = seq
+                                break
+                        if seq_res != None:
+                            for first_fragment in seq_res:
+                                if first_fragment in new_offset:
+                                    if first_fragment != ind and ind != 0:
+                                        frag[IPv6ExtHdrFragment].offset = frag[IPv6ExtHdrFragment].offset + (new_offset[first_fragment] // 8)
                     
                 ind += 1
               
