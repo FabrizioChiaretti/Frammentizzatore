@@ -1409,7 +1409,7 @@ class frammentizzatore:
                                     if first_fragment != ind and ind != 0:
                                         frag[IPv6ExtHdrFragment].offset = frag[IPv6ExtHdrFragment].offset + (new_offset[first_fragment] // 8)
                     
-                ind += 1
+                    ind += 1
               
             new_res.append(new_fragments)
             n += 1
