@@ -827,7 +827,7 @@ class frammentizzatore:
         else:
             payload_nh = ""
         
-        self.logs_handler.logger.info("protocol %s, number of new packets %d, number of final packets %d", protocol, new_packets_found, final_packets_found)
+        self.logs_handler.logger.info("protocol %s, number of new packets %d, number of final packets %d", payload_nh, new_packets_found, final_packets_found)
         self.logs_handler.logger.info("Overlapping fragmentation ends, returning %d fragments", lenght)
         
         # reset the input packet
