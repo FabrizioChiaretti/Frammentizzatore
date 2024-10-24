@@ -139,7 +139,6 @@ class frammentizzatore:
     def fragmentation(self, packet):  
         
         res = None
-        matching_fragments = None
         pkt = IPv6(packet.get_payload())
         '''ah = self._ah_header()
         ah.nh = 50
@@ -178,24 +177,49 @@ class frammentizzatore:
         if TCP in pkt:
             frame = pkt[TCP]
             if len(raw(frame.payload)) == 0:
-                if "headerchain" in self.input_handler.type:
-                    input_pkt = [[pkt]]
-                    tmp = self.input_handler.fragments_headerchain
-                    self.input_handler.fragments_headerchain = self.input_handler.tcp_handshake_headerchain
-                    matching_fragments = [[0]]
-                    res = self.header_chain_processor(input_pkt, matching_fragments, packet, pkt)
-                    self.input_handler.fragments_headerchain = tmp
-                    matching_fragments = None
-                else:
-                    if AH in pkt:
-                        return None
+                matching_fragments = None
+                original_fragments = self.input_handler.fragments
+                original_fragments_headerchain = self.input_handler.fragments_headerchain
+                self.input_handler.fragments = self.input_handler.tcp_handshake
+                self.input_handler.fragments_headerchain = self.input_handler.tcp_handshake_headerchain
+                if AH in pkt:
+                    return None
+                if "regular" in self.input_handler.type:
                     res = self.fragment(pkt, fragment_size=self.max_fragment_lenght)
+                if "overlapping" in self.input_handler.type:
+                    if self.input_handler.fragments == None or len(self.input_handler.fragments) == 0:
+                        return None
+                    res, matching_fragments = self.overlapping_fragmentation(packet, pkt) 
+                       
+                if res == None and ("overlapping" in self.input_handler.type or "regular" in self.input_handler.type):
+                    return res
+                
+                if "headerchain" in self.input_handler.type:
+                    input_pkt = None
+                    if res == None:
+                        input_pkt = [[pkt]]
+                    else:
+                        input_pkt = res
+                    if matching_fragments == None:
+                        if "regular" in self.input_handler.type:
+                            segments = res[0]
+                            matching_fragments = [list(range(0, len(segments)))]
+                        else:
+                            matching_fragments = [[0]]
+                    res = self.header_chain_processor(input_pkt, matching_fragments, packet, pkt)
+                    
+                self.input_handler.fragments = original_fragments
+                self.input_handler.fragments_headerchain = original_fragments_headerchain
                 return res
+        
         
         if "regular" in self.input_handler.type:
             res = self.fragment(pkt, fragment_size=self.input_handler.fragmentSize)
-                
+        
+        matching_fragments = None       
         if "overlapping" in self.input_handler.type:
+            if self.input_handler.fragments == None or len(self.input_handler.fragments) == 0:
+                return None
             res, matching_fragments = self.overlapping_fragmentation(packet, pkt)
         
         if res == None and ("overlapping" in self.input_handler.type or "regular" in self.input_handler.type):
@@ -662,8 +686,8 @@ class frammentizzatore:
             original_packets, matching_fragments, protocol, upper_layer_header = self.payload_defragment(basic_header, res)
             final_packets_found += len(original_packets)
             original_indexes = []
-            for f in empty_fragments:
-                original_indexes.append(original_fragments.index(f))
+            if len(empty_fragments) > 0:
+                original_indexes = original_indexes + list(range(0, len(empty_fragments)))
             for index in matching_fragments:
                 original_indexes.append(original_fragments.index(res[index]))    
             final_matching_fragments.append(original_indexes)
@@ -1395,6 +1419,7 @@ class frammentizzatore:
             if len(input_fragments[0]) > 1:
                 new_fragments_len = len(new_fragments)
                 ind = 0
+                first_fragments = list(new_offset.keys())
                 while ind <  new_fragments_len:
                     frag = new_fragments[ind]
                     if IPv6ExtHdrFragment in frag:
@@ -1404,12 +1429,20 @@ class frammentizzatore:
                                 seq_res = seq
                                 break
                         if seq_res != None:
-                            for first_fragment in seq_res:
-                                if first_fragment in new_offset:
-                                    if first_fragment != ind and ind != 0:
+                            if frag[IPv6ExtHdrFragment].offset == 0:
+                                tmp = seq_res[0:seq_res.index(ind)]
+                                for f in tmp:
+                                    if f in first_fragments:
+                                        frag[IPv6ExtHdrFragment].offset = frag[IPv6ExtHdrFragment].offset + (new_offset[f] // 8)
+                            else:
+                                for first_fragment in first_fragments:
+                                    if first_fragment in seq_res:
                                         frag[IPv6ExtHdrFragment].offset = frag[IPv6ExtHdrFragment].offset + (new_offset[first_fragment] // 8)
-                    
+                                    
+                        #sleep(10)
                     ind += 1
+                #print(new_offset)
+                #sleep(10)
               
             new_res.append(new_fragments)
             n += 1
