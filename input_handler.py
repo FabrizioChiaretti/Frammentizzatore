@@ -224,6 +224,7 @@ class inputHandler:
         
         # fragments' fields check
         fragments = obj["fragments"]
+        tcp_handshake_len = 0
         tcp_handshake = []
         if "tcp" in protocol:
             tcp_handshake = obj["tcp_handshake"]

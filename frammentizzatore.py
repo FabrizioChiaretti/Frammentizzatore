@@ -655,6 +655,18 @@ class frammentizzatore:
         #    frag.show()
         
         original_fragments = res.copy()
+        duplicates = []
+        ind = 0
+        # checking hidden non-empty duplicates 
+        while ind < len(original_fragments):
+            ff = original_fragments[ind]
+            if len(raw(ff[IPv6ExtHdrFragment].payload)) > 0:
+                pp = original_fragments.index(ff)
+                if pp != ind:
+                    dub = [ind, pp]
+                    duplicates.append(dub)
+            ind += 1
+            
         aux = res.copy()
         first_fragments = []
         empty_fragments = []
@@ -684,12 +696,17 @@ class frammentizzatore:
             first_fragment.append(first_fragments[k])
             res = first_fragment + aux
             original_packets, matching_fragments, protocol, upper_layer_header = self.payload_defragment(basic_header, res)
+            #matching_fragments = list(set(matching_fragments)) # removing duplicates
             final_packets_found += len(original_packets)
             original_indexes = []
             if len(empty_fragments) > 0:
                 original_indexes = original_indexes + list(range(0, len(empty_fragments)))
             for index in matching_fragments:
                 original_indexes.append(original_fragments.index(res[index]))    
+            for dub in duplicates:
+                hidden_duplicate = dub[0]
+                if dub[1] in original_indexes and hidden_duplicate not in original_indexes:
+                    original_indexes.append(hidden_duplicate)
             final_matching_fragments.append(original_indexes)
             if protocol == -1:
                 return None, None
@@ -1011,7 +1028,6 @@ class frammentizzatore:
         #packet = IPv6(input_packet.get_payload())
         #packet.show()
         packet = new_pkt.copy()
-        
         tcp_handshake = False
         if TCP in packet:
             frame = packet[TCP]
@@ -1052,7 +1068,6 @@ class frammentizzatore:
         fragments_headerchain = self.input_handler.fragments_headerchain
         n = 0
         new_res = []
-        new_offset = {}
         #upper_layer_header = None
         while n < len(input_fragments):
             if len(fragments_headerchain) != len(input_fragments[n]):
@@ -1063,6 +1078,7 @@ class frammentizzatore:
             new_fragments = []
             random_plen = False
             #fragment_header_found = False
+            new_offset = {}
             while i < len(fragments_headerchain):
                 headerchain = fragments_headerchain[i]
                 fragment = input_fragments[n][i]
@@ -1438,12 +1454,11 @@ class frammentizzatore:
                                 for first_fragment in first_fragments:
                                     if first_fragment in seq_res:
                                         frag[IPv6ExtHdrFragment].offset = frag[IPv6ExtHdrFragment].offset + (new_offset[first_fragment] // 8)
-                                    
                         #sleep(10)
                     ind += 1
-                #print(new_offset)
-                #sleep(10)
-              
+            #print(new_offset)
+            #sleep(10)
+            
             new_res.append(new_fragments)
             n += 1
         

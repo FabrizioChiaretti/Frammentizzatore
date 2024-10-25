@@ -3,7 +3,7 @@
 
 	"chain" : "",
 
-	"protocol": "icmpv6 tcp",
+	"protocol": "icmpv6 tcp udp",
 	
 	"dstPort": -1,
 
@@ -17,24 +17,45 @@
 
 	"tcp_handshake":[
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"",
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"a",
 		"HeaderChain":[{"fragment":-1}, {"destination":60}]},
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":0, "M": 0, "indexes":[], "payload":"",
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"b",
+		"HeaderChain":[{"fragment":-1}, {"destination":60}]},
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"c",
+		"HeaderChain":[{"fragment":-1}, {"destination":60}]},
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"d",
+		"HeaderChain":[{"fragment":-1}, {"destination":60}]},
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"e",
+		"HeaderChain":[{"fragment":-1}, {"destination":60}]},
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":0, "M": 0, "indexes":[], "payload":"f",
 		"HeaderChain":[{"fragment":-1}, {"destination":-1}]}
 
 	],
 
 	"fragments":[	
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"",
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"a",
 		"HeaderChain":[{"fragment":-1}, {"destination":60}]},
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"",
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"b",
 		"HeaderChain":[{"fragment":-1}, {"destination":60}]},
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":0, "M": 0, "indexes":[], "payload":"",
-		"HeaderChain":[{"fragment":-1}, {"destination":58}]}
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"c",
+		"HeaderChain":[{"fragment":-1}, {"destination":60}]},
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"d",
+		"HeaderChain":[{"fragment":-1}, {"destination":60}]},
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"e",
+		"HeaderChain":[{"fragment":-1}, {"destination":60}]},
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":0, "M": 0, "indexes":[], "payload":"f",
+		"HeaderChain":[{"fragment":-1}, {"destination":-1}]}
 
 	]
 
