@@ -17,9 +17,9 @@ class frammentizzatore:
     
     def packetCheck(self, packet):
         
-        if self.input_handler.fragmentSize > self.max_fragment_lenght:
+        '''if self.input_handler.fragmentSize > self.max_fragment_lenght:
             self.logs_handler.logger.error("The maximum fragment size is %d", self.max_fragment_lenght)
-            return False
+            return False'''
         
         if IPv6ExtHdrFragment in packet:
             self.logs_handler.logger.error("IPv6ExtHdrFragment already here")
@@ -214,7 +214,7 @@ class frammentizzatore:
         
         
         if "regular" in self.input_handler.type:
-            res = self.fragment(pkt, fragment_size=self.input_handler.fragmentSize)
+            res = self.fragment(pkt, fragment_size=self.input_handler.regular_fragmentSize)
         
         matching_fragments = None       
         if "overlapping" in self.input_handler.type:
@@ -571,7 +571,7 @@ class frammentizzatore:
                     segment.hlim = frag["HopLimit"]
                 
                 if len(raw(segment)) > self.max_fragment_lenght:
-                    self.logs_handler.logger.error("The lenght of the fragment %d is greater than the maximum fragment lenght (%d)", j+1, self.max_fragment_lenght)
+                    self.logs_handler.logger.error("The lenght of the fragment %d (%d) is greater than the maximum fragment lenght (%d)", j+1, len(raw(segment)), self.max_fragment_lenght)
                     return None, None
                 
                 segment = IPv6(segment)
@@ -1003,6 +1003,9 @@ class frammentizzatore:
                 segment = UnfragPart / fragHeader / tmp
                 segment.plen = len(raw(segment.payload))
                 segment= IPv6(segment)
+                if len(raw(segment)) > self.max_fragment_lenght:
+                    self.logs_handler.logger.error("The lenght of the fragment %d (%d) is greater than the maximum fragment lenght (%d)", j+1, len(raw(segment)), self.max_fragment_lenght)
+                    return None, None
                 res.append(segment)
                 #segment.show()
                 j+=1
@@ -1013,6 +1016,9 @@ class frammentizzatore:
                 segment = UnfragPart / fragHeader / remain
                 segment.plen = len(raw(segment.payload))
                 segment= IPv6(segment)
+                if len(raw(segment)) > self.max_fragment_lenght:
+                    self.logs_handler.logger.error("The lenght of the fragment %d (%d) is greater than the maximum fragment lenght (%d)", j+1, len(raw(segment)), self.max_fragment_lenght)
+                    return None, None
                 res.append(segment)
                 #segment.show()
                 break
@@ -1070,12 +1076,19 @@ class frammentizzatore:
         new_res = []
         #upper_layer_header = None
         while n < len(input_fragments):
-            if len(fragments_headerchain) != len(input_fragments[n]):
-                self.logs_handler.logger.error("Can not find the header chain of all the fragments")
-                return input_fragments
+            if "regular" in self.input_handler.type:
+                if len(fragments_headerchain) > len(input_fragments[n]):
+                    self.logs_handler.logger.error("The number of fragments (%d) is lower that the number of fragments entries in the input.json file (%d)", len(input_fragments[n]), len(fragments_headerchain))
+                    return input_fragments
+            else:
+                if (len(fragments_headerchain) != len(input_fragments[n])):
+                    self.logs_handler.logger.error("Can not find the header chain of all the fragments")
+                    return input_fragments
         
             i = 0
+
             new_fragments = []
+                
             random_plen = False
             #fragment_header_found = False
             new_offset = {}
@@ -1429,8 +1442,16 @@ class frammentizzatore:
                             
                         pld = pld.payload
 
+                if len(raw(new_fragment)) > self.max_fragment_lenght:
+                    self.logs_handler.logger.error("The lenght of the fragment %d (%d) is greater than the maximum fragment lenght (%d)", j+1, len(raw(new_fragment)), self.max_fragment_lenght)
+                    return None
+                
                 new_fragments.append(new_fragment)
                 i += 1
+                #for fr in new_fragments:
+                    #fr[IPv6ExtHdrFragment].nh = 58
+            
+            new_fragments = new_fragments + input_fragments[n][len(fragments_headerchain):]
             
             if len(input_fragments[0]) > 1:
                 new_fragments_len = len(new_fragments)

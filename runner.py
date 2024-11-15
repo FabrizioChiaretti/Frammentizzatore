@@ -61,7 +61,7 @@ def main():
         exit(1)
     
     global frammentatore
-    frammentatore = frammentizzatore(logs_handler, input_handler)
+    frammentatore = frammentizzatore(logs_handler, input_handler, max_fragment_lenght=input_handler.max_fragmentSize)
     
     global sender_obj
     sender_obj = sender(logs_handler)

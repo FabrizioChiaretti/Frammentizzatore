@@ -5,6 +5,10 @@ from ipaddress import ip_address, IPv6Address
 from log import log
 from time import sleep
 
+# fare dei test per verificare le ultime modifiche
+# pusha il codice
+# dare la possibilità di modificare l'headerchain dei frammenti prendendo in input una sola headerchain nel caso regular
+# dare la possibilità di eseguire più istanze del tool con configurazioni diverse (input1.json, input2.json ecc...)
 
 class inputHandler:
     
@@ -20,7 +24,8 @@ class inputHandler:
         self.ipv6Dest = "" 
         self.type = "regular" 
         self.singleTest = 0
-        self.fragmentSize = 1280
+        self.max_fragmentSize = 1280
+        self.regular_fragmentSize = 1280
         self.fragments = None
         self.fragments_headerchain = []
         self.tcp_handshake = []
@@ -72,10 +77,10 @@ class inputHandler:
         keys = list(obj.keys())
         keys_len = len(keys)
         
-        if keys_len > 10:
+        if keys_len > 11:
             self.logs_handler.logger.error("input.json file contains unexpected fileds")
             return False
-        elif keys_len < 10:
+        elif keys_len < 11:
             self.logs_handler.logger.error("input.json file does not contain all the expected fileds")
             return False
         
@@ -196,14 +201,21 @@ class inputHandler:
             self.singleTest = 1
         
         # fragment size check   
-        if "fragmentSize" not in keys:
-            self.logs_handler.logger.error("'fragmentSize' field not found in input.json")
+        if "regular-fragmentSize" not in keys:
+            self.logs_handler.logger.error("'regular-fragmentSize' field not found in input.json")
             return False
         if "regular" in self.type:
-            if type(obj["fragmentSize"]) == int and obj["fragmentSize"] >= 0:#and obj["fragmentSize"] >= 56:
-                self.fragmentSize = obj["fragmentSize"]
+            if type(obj["regular-fragmentSize"]) == int and obj["regular-fragmentSize"] >= 0:#and obj["fragmentSize"] >= 56:
+                self.regular_fragmentSize = obj["regular-fragmentSize"]
             #else:
             #    self.logs_handler.logger.warning("fragmentSize not specified, default is 1280")
+        
+        # max_fragmentSize check   
+        if "max_fragmentSize" not in keys:
+            self.logs_handler.logger.error("'max_fragmentSize' field not found in input.json")
+            return False
+        if type(obj["max_fragmentSize"]) == int and obj["max_fragmentSize"] > 48:#and obj["fragmentSize"] >= 56:
+            self.max_fragmentSize = obj["max_fragmentSize"]
         
         # tcp_handshake check
         if "tcp_handshake" not in keys:
@@ -491,16 +503,16 @@ class inputHandler:
         
         # show the input on command line
         if self.dstPort < 0:
-            self.logs_handler.logger.info("table=%s, chain=%s, protocol=%s, dstPort=%s, ipv6Dest=%s, type=%s", \
+            self.logs_handler.logger.info("table=%s, chain=%s, protocol=%s, dstPort=%s, ipv6Dest=%s, max_framentSize=%s, type=%s", \
             "filter" if self.table == "" else self.table, "OUTPUT" if self.chain == "" else self.chain, \
-            "any" if self.protocol == "" else self.protocol, "any", "any" if self.ipv6Dest == "" else self.ipv6Dest, self.type)
+            "any" if self.protocol == "" else self.protocol, "any", "any" if self.ipv6Dest == "" else self.ipv6Dest, self.max_fragmentSize, self.type)
         else:
-             self.logs_handler.logger.info("table=%s, chain=%s, protocol=%s, dstPort=%d, ipv6Dest=%s, type=%s", \
+             self.logs_handler.logger.info("table=%s, chain=%s, protocol=%s, dstPort=%d, ipv6Dest=%s, max_framentSize=%s, type=%s", \
             "filter" if self.table == "" else self.table, "OUTPUT" if self.chain == "" else self.chain, \
-            "any" if self.protocol == "" else self.protocol, self.dstPort, "any" if self.ipv6Dest == "" else self.ipv6Dest, self.type)
+            "any" if self.protocol == "" else self.protocol, self.dstPort, "any" if self.ipv6Dest == "" else self.ipv6Dest, self.max_fragmentSize, self.type)
         
         if "regular" in self.type:
-            self.logs_handler.logger.info("fragmentSize=%d", self.fragmentSize)
+            self.logs_handler.logger.info("regular_fragmentSize=%d", self.regular_fragmentSize)
         
         if "overlapping" in self.type:
             self.logs_handler.logger.info("singleTest=%d", self.singleTest)
