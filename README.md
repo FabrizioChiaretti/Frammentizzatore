@@ -94,15 +94,18 @@ By default, when fragments overlap, each permutation of the fragments is sent to
 
 - "*Headerchain*" type provides to the user the possibility to modify or define the IPv6 extension headers chain of intercepted packets. When just "headerchain" is specified, the user can modify the order of the extension headers of the original packets and add new extension headers.
 This option can be combined with overlapping fragmentation and regular fragmentation, therefore "*Overlapping-Headerchain*" and "*Regular-Headerchain*" fragmentation types are supported. They allow the user to manipulate the extension headers chain of each fragment by specifying the names of the extensions headers in the **HeaderChain** field of the **fragments** record.
-The extension headers that can be added to packets are Hop-by-Hop Option header, Routing header, Destination Option header and Fragment header (also repetitions of them). Authentication header (AH) and Encapsulating Security Payload (ESP) can not be added, but when they are already located in the intercepted packets, they can be specified in the **HeaderChain** field. For each extension header, the user can specify the value of "*Next Header" field. The default value is *-1* and in that case the tool will choose an appropriate value to insert in the "Next Header" field of the specified extension header.
-If the user choose "*Headerchain*" type, it is required to add just an item in the **fragments** record and when the user choose "*Regular-Headerchain*" type it is required to add an item in the **fragments** record for each fragment that will be created by the tool.
+Extension headers that can be added to packets are Hop-by-Hop Option header, Routing header, Destination Option header and Fragment header (also repetitions of them). Authentication header (AH) and Encapsulating Security Payload (ESP) can not be added to the fragments, but when they are already located in the intercepted packets, they can be specified in the **HeaderChain** field. For each extension header, the user can specify the value of "*Next Header" field. The default value is *-1* and in that case the tool will choose an appropriate value to insert in "Next Header" field of the specified extension header. It is possible to modify the upper layer header by inserting the correspinding upper layer header entry in the hader chain of fragments carrying the header. For TCP headers it is possible to modify the flags, the source port and the destination port, for UDP headers it is possible to modify hust the source port and the destination port. About ICMPv6, it is possible to modify just the header of ICMPv6 echo requests and echo replies, in particular one can modify their id and sequence numbers.
+If the user choose "*Headerchain*" type, it is required to add just an item in the **fragments** record.
+When the user choose "*Regular-Headerchain*" type, the header chain of the *i*-th fragment is manipulate according to the *i*-th entry of the **fragments** record, therefore it is admitted to have a number of entries that is lower to the number of fragments created, but not the opposite.
+When the there are exactly two entries in the **fragments** record, the header chain of first fragment is manipulated according to the first entry and the header chain all the other fragments is manipulated according to the second entry.
 
-Example on how to specify the extension headers chain of a fragment
-![Screenshot 2024-11-11 164856](https://github.com/user-attachments/assets/012311cd-d05a-4fc0-b3e7-dcfcc6fd4cd7)
+Examples on how to specify the header chain of a fragment
+![Screenshot 2024-11-18 121018](https://github.com/user-attachments/assets/bb452a80-3f98-4d07-8780-c659ebc4097d)
+![Screenshot 2024-11-18 121209](https://github.com/user-attachments/assets/11da65f2-1a31-4d59-ad89-1e986ab1f5b5)
+![Screenshot 2024-11-18 121330](https://github.com/user-attachments/assets/fe2e50d7-c21f-4a6e-b6af-f8668048b1c4)
+When the value of a field is *-1*, the corresponding field is unchanged.
 
 When *tcp* is specified in **protocol** field and **type** field is set to either "*Headerchain*" or "*Overlapping*" or "*Overlapping-Headerchain*", the tool provides the possibility to the user to apply fragmentation and/or extension headers chain manipulation of the *tcp hanshake* traffic and *tcp Acknowledgement* packets. Therefore, when manipulating TCP traffic, the tool apply the manipulation of the *tcp handshake* traffic and *tcp Acknowledgement* packets according to **tcp_handshake** record and all the other TCP traffic is manipulated according to **fragments** record.  
-
-The user finds an example of "*Overlapping-Headerchain*" fragmentation type in the **input.json** file when downloading the project.
 
 
 
