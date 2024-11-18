@@ -1,0 +1,33 @@
+{	
+	"table" : "",
+
+	"chain" : "",
+
+	"protocol": "icmpv6 udp tcp",
+	
+	"dstPort": -1,
+
+	"ipv6Dest":"2001:b07:a70:8773:ead1:1bff:fe94:cb2a", 
+	
+	"type":"regular-headerchain", 
+	
+	"regular-fragmentSize": 400,
+
+	"max_fragmentSize": 1400,
+
+	"singleTest": 1,
+
+	"tcp_handshake":[
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":0, "M": 0, "indexes":[], "payload":"f",
+		"HeaderChain":[{"fragment":-1}, {"destination":-1}]}
+
+	],
+
+	"fragments":[	
+
+		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":200, "FO":0, "M": 1, "indexes":[], "payload":"",
+		"HeaderChain":[{"destination":-1}, {"fragment":-1}]}
+	]
+
+}

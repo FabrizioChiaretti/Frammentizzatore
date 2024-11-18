@@ -4,7 +4,7 @@ import subprocess
 
 class FirewallHandler:
     
-    def __init__(self, os_type, logs_handler, table = "", chain = "", protocol = "", dest_ipv6addr="", dstPort = ""):
+    def __init__(self, os_type, logs_handler, queue_num, table = "", chain = "", protocol = "", dest_ipv6addr="", dstPort = ""):
         self.os_type = os_type
         self.logs_handler = logs_handler
         self.table = table
@@ -12,6 +12,7 @@ class FirewallHandler:
         self.protocol = protocol
         self.dest_ipv6addr = dest_ipv6addr
         self.dstPort = dstPort
+        self.queue_num = queue_num
         self.args = []  
         
 
@@ -68,7 +69,7 @@ class FirewallHandler:
         
         k = 0
         while k < len(self.args):
-            self.args[k] = self.args[k] + (["-j", "NFQUEUE", "--queue-num", str(1)])
+            self.args[k] = self.args[k] + (["-j", "NFQUEUE", "--queue-num", str(self.queue_num)])
             k += 1
             
         for arg in self.args:

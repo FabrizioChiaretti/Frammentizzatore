@@ -5,10 +5,6 @@ from ipaddress import ip_address, IPv6Address
 from log import log
 from time import sleep
 
-# fare dei test per verificare le ultime modifiche
-# pusha il codice
-# dare la possibilità di modificare l'headerchain dei frammenti prendendo in input una sola headerchain nel caso regular
-# dare la possibilità di eseguire più istanze del tool con configurazioni diverse (input1.json, input2.json ecc...)
 
 class inputHandler:
     

@@ -1080,6 +1080,9 @@ class frammentizzatore:
                 if len(fragments_headerchain) > len(input_fragments[n]):
                     self.logs_handler.logger.error("The number of fragments (%d) is lower that the number of fragments entries in the input.json file (%d)", len(input_fragments[n]), len(fragments_headerchain))
                     return input_fragments
+                if len(fragments_headerchain) == 2:
+                    fragments_headerchain = fragments_headerchain + [fragments_headerchain[1]]*(len(input_fragments[n])-2) 
+            
             else:
                 if (len(fragments_headerchain) != len(input_fragments[n])):
                     self.logs_handler.logger.error("Can not find the header chain of all the fragments")

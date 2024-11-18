@@ -7,9 +7,9 @@
 	
 	"dstPort": -1,
 
-	"ipv6Dest":"2001:b07:a70:8773:fd6e:37c0:d49f:9261", 
+	"ipv6Dest":"::1", 
 	
-	"type":"overlapping-HeaderChain", 
+	"type":"HeaderChain", 
 	
 	"regular-fragmentSize": 200,
 
@@ -41,14 +41,23 @@
 
 	"fragments":[	
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":200, "FO":0, "M": 1, "indexes":[], "payload":"",
-		"HeaderChain":[{"destination":-1}, {"fragment":-1}, {"destination":-1}, {"destination":-1}]},
+	{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"a",
+	"HeaderChain":[{"destination":-1}, {"fragment":-1}]},
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":200, "FO":200, "M": 1, "indexes":[], "payload":"",
-		"HeaderChain":[{"destination":-1}, {"destination":-1}, {"fragment":-1}]},
+	{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"b",
+	"HeaderChain":[{"fragment":-1}, {"destination":60}]},
 
-		{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":200, "FO":400, "M": 0, "indexes":[], "payload":"",
-		"HeaderChain":[{"destination":-1}, {"destination":-1}, {"destination":-1}, {"fragment":-1}]}
+	{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"c",
+	"HeaderChain":[{"fragment":-1}, {"destination":60}]},
+
+	{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"d",
+	"HeaderChain":[{"fragment":-1}, {"destination":60}]},
+
+	{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":0, "FO":0, "M": 1, "indexes":[], "payload":"e",
+	"HeaderChain":[{"fragment":-1}, {"destination":60}]},
+
+	{"src":"", "dst":"", "plen":-1, "HopLimit":-1, "PayloadLenght":-1, "FO":0, "M": 0, "indexes":[], "payload":"f",
+	"HeaderChain":[{"fragment":-1}, {"destination":-1}]}
 
 	]
 
